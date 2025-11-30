@@ -24,8 +24,65 @@
             <button class="btn btn-primary" type="submit">Ingresar</button>
           </div>
         </form>
+
+        <div id="jwt-alert" class="alert d-none" role="alert"></div>
+        <div class="border rounded p-3 bg-light">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <div>
+              <h6 class="mb-0">Obtener JWT</h6>
+              <small class="text-muted">Usa las mismas credenciales para guardar access/refresh en este navegador.</small>
+            </div>
+            <button class="btn btn-outline-secondary" type="button" id="jwt-btn">Obtener JWT</button>
+          </div>
+          <p class="mb-0 small text-muted">El login por sesión sigue funcionando. Este botón solo llama a /api/token/.</p>
+        </div>
       </div>
     </div>
   </div>
 </div>
+
+<script>
+const jwtBtn = document.getElementById('jwt-btn');
+const jwtAlert = document.getElementById('jwt-alert');
+const usernameInput = document.querySelector('input[name="username"]');
+const passwordInput = document.querySelector('input[name="password"]');
+
+function showJwtAlert(type, message) {
+  jwtAlert.className = `alert alert-${type}`;
+  jwtAlert.textContent = message;
+  jwtAlert.classList.remove('d-none');
+}
+
+if (jwtBtn) {
+  jwtBtn.addEventListener('click', async () => {
+    const username = usernameInput.value.trim();
+    const password = passwordInput.value;
+    if (!username || !password) {
+      showJwtAlert('warning', 'Ingresa usuario y contraseña para solicitar el JWT.');
+      return;
+    }
+    jwtBtn.disabled = true;
+    showJwtAlert('info', 'Solicitando token...');
+    try {
+      const res = await fetch('/api/token/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        localStorage.setItem('access', data.access);
+        localStorage.setItem('refresh', data.refresh);
+        showJwtAlert('success', 'Tokens guardados en localStorage.');
+      } else {
+        showJwtAlert('danger', data.detail || 'No se pudo obtener el token (verifica usuario/contraseña).');
+      }
+    } catch (err) {
+      showJwtAlert('danger', err.toString());
+    } finally {
+      jwtBtn.disabled = false;
+    }
+  });
+}
+</script>
 {% endblock %}

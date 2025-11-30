@@ -1,5 +1,122 @@
 {% extends 'base.html' %}
 {% block content %}
-<h3>Checkout</h3>
-<p>Seleccione sucursal y confirme desde la API.</p>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h3 class="mb-0">Checkout</h3>
+    <small class="text-muted">Confirma tu compra con los items actuales del carrito</small>
+  </div>
+  <a href="{% url 'shop-cart' %}" class="btn btn-outline-secondary btn-sm">← Volver al carrito</a>
+</div>
+
+<div id="checkout-alert" class="alert d-none" role="alert"></div>
+
+<form id="checkout-form" class="card shadow-sm" novalidate>
+  <div class="card-body">
+    <div class="row g-3 mb-3">
+      <div class="col-md-6">
+        <label class="form-label">Sucursal</label>
+        <select name="branch" id="branch-select" class="form-select" required {% if not has_items %}disabled{% endif %}>
+          <option value="">Selecciona sucursal</option>
+          {% for branch in branches %}
+            <option value="{{ branch.id }}">{{ branch.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-6 d-flex align-items-end justify-content-end">
+        <small class="text-muted">Este paso usa /api/cart/checkout/. Si necesitas JWT, obtenlo en la pantalla de login o tokens.</small>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Producto</th>
+            <th class="text-end">Cantidad</th>
+            <th class="text-end">Subtotal</th>
+          </tr>
+        </thead>
+        <tbody id="checkout-body">
+          {% for line in cart_lines %}
+            <tr>
+              <td>{{ line.item.product.name }}</td>
+              <td class="text-end">{{ line.item.quantity }}</td>
+              <td class="text-end">${{ line.subtotal }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="3" class="text-center py-4">No hay items para procesar.</td></tr>
+          {% endfor %}
+        </tbody>
+        {% if has_items %}
+        <tfoot>
+          <tr>
+            <th colspan="2" class="text-end">Total</th>
+            <th class="text-end" id="checkout-total">${{ total }}</th>
+          </tr>
+        </tfoot>
+        {% endif %}
+      </table>
+    </div>
+  </div>
+  <div class="card-footer d-flex justify-content-end">
+    <button class="btn btn-primary" type="submit" id="confirm-btn" {% if not has_items %}disabled{% endif %}>Confirmar compra</button>
+  </div>
+</form>
+
+<script>
+function getCSRFToken() {
+  const csrfCookie = document.cookie.split(';').find((cookie) => cookie.trim().startsWith('csrftoken='));
+  return csrfCookie ? csrfCookie.split('=')[1] : '';
+}
+
+const checkoutForm = document.getElementById('checkout-form');
+const checkoutAlert = document.getElementById('checkout-alert');
+const branchSelect = document.getElementById('branch-select');
+const checkoutBody = document.getElementById('checkout-body');
+const confirmBtn = document.getElementById('confirm-btn');
+const checkoutTotal = document.getElementById('checkout-total');
+
+function showAlert(type, message) {
+  checkoutAlert.className = `alert alert-${type}`;
+  checkoutAlert.textContent = message;
+  checkoutAlert.classList.remove('d-none');
+}
+
+if (checkoutForm) {
+  checkoutForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!branchSelect.value) {
+      showAlert('warning', 'Selecciona una sucursal para continuar.');
+      return;
+    }
+    confirmBtn.disabled = true;
+    showAlert('info', 'Procesando checkout...');
+    try {
+      const res = await fetch('/api/cart/checkout/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCSRFToken(),
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({ branch_id: branchSelect.value }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showAlert('success', `Orden creada con ID ${data.id}. El carrito se ha vaciado.`);
+        checkoutBody.innerHTML = '<tr><td colspan="3" class="text-center py-4">Checkout completado.</td></tr>';
+        if (checkoutTotal) checkoutTotal.textContent = '$0';
+        confirmBtn.disabled = true;
+        branchSelect.disabled = true;
+      } else {
+        showAlert('danger', data.detail || 'No se pudo confirmar el checkout.');
+        confirmBtn.disabled = false;
+      }
+    } catch (err) {
+      showAlert('danger', err.toString());
+      confirmBtn.disabled = false;
+    }
+  });
+}
+</script>
 {% endblock %}

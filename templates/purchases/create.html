@@ -1,0 +1,189 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-10">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div>
+        <h3 class="mb-0">Registrar compra</h3>
+        <small class="text-muted">Crea la compra para actualizar el inventario</small>
+      </div>
+      <a href="{% url 'inventory_by_branch' %}" class="btn btn-outline-secondary">← Inventario</a>
+    </div>
+
+    {% if form_errors %}
+      <div class="alert alert-danger">
+        <ul class="mb-0">
+          {% for err in form_errors %}<li>{{ err }}</li>{% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
+    <form method="post" class="card shadow-sm" novalidate>
+      <div class="card-body">
+        {% csrf_token %}
+        <div class="row g-3 mb-3">
+          <div class="col-md-4">
+            <label class="form-label">Sucursal</label>
+            <select name="branch" class="form-select" required>
+              <option value="">Selecciona sucursal</option>
+              {% for branch in branches %}
+                <option value="{{ branch.id }}" {% if branch.id|stringformat:'s' == selected_branch_id %}selected{% endif %}>{{ branch.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Proveedor</label>
+            <select name="supplier" class="form-select" required>
+              <option value="">Selecciona proveedor</option>
+              {% for supplier in suppliers %}
+                <option value="{{ supplier.id }}" {% if supplier.id|stringformat:'s' == selected_supplier_id %}selected{% endif %}>{{ supplier.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Fecha</label>
+            <input type="date" class="form-control" name="date" value="{{ date_value }}" max="{{ date_value }}" required>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h5 class="mb-0">Items</h5>
+          <button type="button" class="btn btn-outline-primary btn-sm" id="add-row">+ Agregar fila</button>
+        </div>
+        <div class="table-responsive">
+          <table class="table align-middle" id="items-table">
+            <thead>
+              <tr>
+                <th style="width: 45%">Producto</th>
+                <th style="width: 20%">Cantidad</th>
+                <th style="width: 25%">Costo unitario</th>
+                <th style="width: 10%"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if items_payload %}
+                {% for item in items_payload %}
+                  <tr>
+                    <td>
+                      <select name="item_product" class="form-select" required>
+                        <option value="">Selecciona producto</option>
+                        {% for product in products %}
+                          <option value="{{ product.id }}" {% if product.id|stringformat:'s' == item.product|stringformat:'s' %}selected{% endif %}>{{ product.name }}</option>
+                        {% endfor %}
+                      </select>
+                    </td>
+                    <td><input type="number" name="item_quantity" class="form-control" min="1" value="{{ item.quantity }}" required></td>
+                    <td><input type="number" name="item_unit_cost" class="form-control" min="0" step="0.01" value="{{ item.unit_cost }}" required></td>
+                    <td class="text-end"><button class="btn btn-link text-danger remove-row" type="button">&times;</button></td>
+                  </tr>
+                {% endfor %}
+              {% else %}
+                <tr>
+                  <td>
+                    <select name="item_product" class="form-select" required>
+                      <option value="">Selecciona producto</option>
+                      {% for product in products %}
+                        <option value="{{ product.id }}">{{ product.name }}</option>
+                      {% endfor %}
+                    </select>
+                  </td>
+                  <td><input type="number" name="item_quantity" class="form-control" min="1" value="1" required></td>
+                  <td><input type="number" name="item_unit_cost" class="form-control" min="0" step="0.01" value="0" required></td>
+                  <td class="text-end"><button class="btn btn-link text-danger remove-row" type="button">&times;</button></td>
+                </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card-footer d-flex justify-content-end gap-2">
+        <a href="{% url 'inventory_by_branch' %}" class="btn btn-light">Cancelar</a>
+        <button type="submit" class="btn btn-primary">Guardar compra</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+const itemsTable = document.querySelector('#items-table tbody');
+const addRowBtn = document.getElementById('add-row');
+
+function buildProductSelect() {
+  const select = document.createElement('select');
+  select.name = 'item_product';
+  select.className = 'form-select';
+  select.required = true;
+  const defaultOpt = document.createElement('option');
+  defaultOpt.value = '';
+  defaultOpt.textContent = 'Selecciona producto';
+  select.appendChild(defaultOpt);
+  {% for product in products %}
+    const opt{{ forloop.counter }} = document.createElement('option');
+    opt{{ forloop.counter }}.value = '{{ product.id }}';
+    opt{{ forloop.counter }}.textContent = '{{ product.name|escapejs }}';
+    select.appendChild(opt{{ forloop.counter }});
+  {% endfor %}
+  return select;
+}
+
+function addRow(values = {}) {
+  const tr = document.createElement('tr');
+  const productTd = document.createElement('td');
+  const qtyTd = document.createElement('td');
+  const costTd = document.createElement('td');
+  const actionsTd = document.createElement('td');
+  actionsTd.className = 'text-end';
+
+  const productSelect = buildProductSelect();
+  if (values.product) {
+    productSelect.value = values.product;
+  }
+  productTd.appendChild(productSelect);
+
+  const qtyInput = document.createElement('input');
+  qtyInput.type = 'number';
+  qtyInput.name = 'item_quantity';
+  qtyInput.className = 'form-control';
+  qtyInput.min = '1';
+  qtyInput.value = values.quantity || '1';
+  qtyInput.required = true;
+  qtyTd.appendChild(qtyInput);
+
+  const costInput = document.createElement('input');
+  costInput.type = 'number';
+  costInput.name = 'item_unit_cost';
+  costInput.className = 'form-control';
+  costInput.min = '0';
+  costInput.step = '0.01';
+  costInput.value = values.unit_cost || '0';
+  costInput.required = true;
+  costTd.appendChild(costInput);
+
+  const removeBtn = document.createElement('button');
+  removeBtn.type = 'button';
+  removeBtn.className = 'btn btn-link text-danger remove-row';
+  removeBtn.innerHTML = '&times;';
+  removeBtn.addEventListener('click', () => tr.remove());
+  actionsTd.appendChild(removeBtn);
+
+  tr.appendChild(productTd);
+  tr.appendChild(qtyTd);
+  tr.appendChild(costTd);
+  tr.appendChild(actionsTd);
+  itemsTable.appendChild(tr);
+}
+
+if (addRowBtn) {
+  addRowBtn.addEventListener('click', () => addRow());
+}
+
+document.querySelectorAll('.remove-row').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    const row = e.target.closest('tr');
+    if (itemsTable.rows.length > 1) {
+      row.remove();
+    }
+  });
+});
+</script>
+{% endblock %}

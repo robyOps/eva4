@@ -1,12 +1,49 @@
 {% extends 'base.html' %}
 {% block content %}
-<h3>Carrito</h3>
-<table class="table">
-  <thead><tr><th>Producto</th><th>Cantidad</th></tr></thead>
-  <tbody>
-    {% for item in items %}
-    <tr><td>{{ item.product.name }}</td><td>{{ item.quantity }}</td></tr>
-    {% empty %}<tr><td colspan="2">Sin items</td></tr>{% endfor %}
-  </tbody>
-</table>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="mb-0">Carrito</h3>
+  <a href="{% url 'shop-products' %}" class="btn btn-outline-secondary btn-sm">← Seguir comprando</a>
+</div>
+
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Producto</th>
+          <th class="text-end">Precio</th>
+          <th class="text-end">Cantidad</th>
+          <th class="text-end">Subtotal</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for line in cart_lines %}
+          <tr>
+            <td>{{ line.item.product.name }}</td>
+            <td class="text-end">${{ line.item.product.price }}</td>
+            <td class="text-end">{{ line.item.quantity }}</td>
+            <td class="text-end">${{ line.subtotal }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="4" class="text-center py-4">Sin items en el carrito.</td></tr>
+        {% endfor %}
+      </tbody>
+      {% if has_items %}
+      <tfoot>
+        <tr>
+          <th colspan="3" class="text-end">Total</th>
+          <th class="text-end">${{ total }}</th>
+        </tr>
+      </tfoot>
+      {% endif %}
+    </table>
+  </div>
+  <div class="card-footer d-flex justify-content-between align-items-center">
+    <small class="text-muted">Si necesitas JWT para la API, obténlo en el login o página de tokens.</small>
+    <div class="d-flex gap-2">
+      <a href="{% url 'shop-products' %}" class="btn btn-light">Agregar más productos</a>
+      <a href="{% url 'shop-checkout' %}" class="btn btn-primary {% if not has_items %}disabled{% endif %}">Ir a checkout</a>
+    </div>
+  </div>
+</div>
 {% endblock %}

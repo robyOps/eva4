@@ -5,6 +5,7 @@ from django.db.models import F
 from django.http import Http404
 from django.shortcuts import render, redirect
 from django.utils import timezone
+from decimal import Decimal
 
 from apps.accounts.models import User
 from apps.inventory.models import Branch, Inventory, Product, Supplier
@@ -90,12 +91,30 @@ def cart_view(request):
         items = CartItem.objects.none()
     else:
         items = CartItem.objects.filter(user=request.user, product__company=company).select_related('product')
-    return render(request, 'shop/cart.html', {'items': items, 'company': company})
+    cart_lines = [{'item': item, 'subtotal': item.product.price * item.quantity} for item in items]
+    total = sum((line['subtotal'] for line in cart_lines), Decimal('0'))
+    context = {'cart_lines': cart_lines, 'company': company, 'total': total, 'has_items': bool(cart_lines)}
+    return render(request, 'shop/cart.html', context)
 
 
 @login_required
 def checkout_view(request):
-    return render(request, 'shop/checkout.html')
+    company = getattr(request.user, 'company', None)
+    if not company:
+        messages.warning(request, 'Asigna una compañía antes de confirmar el checkout.')
+        return redirect('dashboard')
+
+    items = CartItem.objects.filter(user=request.user, product__company=company).select_related('product')
+    cart_lines = [{'item': item, 'subtotal': item.product.price * item.quantity} for item in items]
+    branches = Branch.objects.filter(company=company)
+    total = sum((line['subtotal'] for line in cart_lines), Decimal('0'))
+    context = {
+        'cart_lines': cart_lines,
+        'branches': branches,
+        'total': total,
+        'has_items': bool(cart_lines),
+    }
+    return render(request, 'shop/checkout.html', context)
 
 
 @login_required

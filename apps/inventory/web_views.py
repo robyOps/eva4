@@ -1,10 +1,15 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
+from django.utils import timezone
+from django.db import transaction
+from decimal import Decimal, InvalidOperation
+from rest_framework.exceptions import ValidationError
 
 from apps.accounts.models import User
 from .forms import SupplierForm
-from .models import Branch, Inventory, Supplier
+from .models import Branch, Inventory, Supplier, Product, Purchase, PurchaseItem, InventoryMovement
+from .serializers import PurchaseSerializer
 
 
 def _user_has_role(user, allowed_roles):
@@ -77,3 +82,115 @@ def inventory_by_branch(request):
         'inventories': inventories,
     }
     return render(request, 'inventory/branch_inventory.html', context)
+
+
+def _create_purchase(validated_data, user):
+    items_data = validated_data.pop('items')
+    branch = validated_data['branch']
+    supplier = validated_data['supplier']
+    if branch.company != user.company or supplier.company != user.company:
+        raise ValidationError('Sucursal o proveedor inválido para esta compañía')
+    purchase = Purchase.objects.create(company=user.company, created_by=user, **validated_data)
+    total = 0
+    with transaction.atomic():
+        for item in items_data:
+            product = item['product']
+            quantity = item['quantity']
+            unit_cost = item['unit_cost']
+            total += quantity * unit_cost
+            PurchaseItem.objects.create(purchase=purchase, **item)
+            inventory, _ = Inventory.objects.get_or_create(
+                company=user.company,
+                branch=purchase.branch,
+                product=product,
+                defaults={'stock': 0},
+            )
+            inventory.stock += quantity
+            inventory.save()
+            InventoryMovement.objects.create(
+                company=user.company,
+                branch=purchase.branch,
+                product=product,
+                movement_type=InventoryMovement.MOV_PURCHASE,
+                quantity_delta=quantity,
+                reason='Compra',
+                created_by=user,
+            )
+    purchase.total_cost = total
+    purchase.save()
+    return purchase
+
+
+@login_required
+def purchase_create(request):
+    denial = _guard_role(request, {User.ROLE_ADMIN_CLIENTE, User.ROLE_GERENTE, User.ROLE_SUPER_ADMIN})
+    if denial:
+        return denial
+
+    company = request.user.company
+    branches = Branch.objects.filter(company=company).order_by('name')
+    suppliers = Supplier.objects.filter(company=company).order_by('name')
+    products = Product.objects.filter(company=company).order_by('name')
+    form_errors = []
+    items_payload = []
+
+    if request.method == 'POST':
+        branch_id = request.POST.get('branch')
+        supplier_id = request.POST.get('supplier')
+        date_input = request.POST.get('date') or timezone.now().date()
+        product_ids = request.POST.getlist('item_product')
+        quantities = request.POST.getlist('item_quantity')
+        costs = request.POST.getlist('item_unit_cost')
+
+        items = []
+        for idx, (pid, qty, cost) in enumerate(zip(product_ids, quantities, costs), start=1):
+            if not pid and not qty:
+                continue
+            if not pid or not qty:
+                form_errors.append(f'Fila {idx}: indica producto y cantidad.')
+                continue
+            try:
+                qty_int = int(qty)
+                if qty_int < 1:
+                    raise ValueError
+            except ValueError:
+                form_errors.append(f'Fila {idx}: cantidad inválida (mínimo 1).')
+                continue
+            try:
+                unit_cost = Decimal(cost or '0')
+                if unit_cost < 0:
+                    raise InvalidOperation
+            except InvalidOperation:
+                form_errors.append(f'Fila {idx}: costo unitario inválido.')
+                continue
+            items.append({'product': pid, 'quantity': qty_int, 'unit_cost': str(unit_cost)})
+            items_payload.append({'product': pid, 'quantity': qty_int, 'unit_cost': unit_cost})
+
+        data = {
+            'branch': branch_id,
+            'supplier': supplier_id,
+            'date': date_input,
+            'items': items,
+        }
+        serializer = PurchaseSerializer(data=data)
+        if serializer.is_valid() and not form_errors:
+            try:
+                purchase = _create_purchase(serializer.validated_data, request.user)
+                messages.success(request, f'Compra #{purchase.id} creada correctamente.')
+                return redirect('purchase_create')
+            except ValidationError as exc:
+                form_errors.append(str(getattr(exc, 'detail', exc)))
+        else:
+            form_errors.extend([f"{key}: {', '.join(map(str, val))}" for key, val in serializer.errors.items()])
+
+    context = {
+        'branches': branches,
+        'suppliers': suppliers,
+        'products': products,
+        'form_errors': form_errors,
+        'selected_branch_id': request.POST.get('branch') if request.method == 'POST' else None,
+        'selected_supplier_id': request.POST.get('supplier') if request.method == 'POST' else None,
+        'date_value': request.POST.get('date') if request.method == 'POST' else timezone.now().date(),
+        'items_payload': items_payload,
+    }
+    return render(request, 'purchases/create.html', context)

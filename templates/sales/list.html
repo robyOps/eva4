@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h3 class="mb-0">Ventas</h3>
+    <small class="text-muted">Listado filtrado por sucursal y fechas</small>
+  </div>
+</div>
+
+<form method="get" class="card mb-3 shadow-sm">
+  <div class="card-body row g-3 align-items-end">
+    <div class="col-md-4">
+      <label class="form-label">Sucursal</label>
+      <select name="branch" class="form-select">
+        <option value="">Todas</option>
+        {% for branch in branches %}
+          <option value="{{ branch.id }}" {% if branch.id|stringformat:'s' == selected_branch_id %}selected{% endif %}>{{ branch.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Desde</label>
+      <input type="date" name="date_from" class="form-control" value="{{ date_from }}">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Hasta</label>
+      <input type="date" name="date_to" class="form-control" value="{{ date_to }}">
+    </div>
+    <div class="col-md-2 d-grid gap-2">
+      <button class="btn btn-primary" type="submit">Filtrar</button>
+      <a class="btn btn-light" href="{% url 'sales_list' %}">Limpiar</a>
+    </div>
+  </div>
+</form>
+
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Fecha</th>
+          <th>Sucursal</th>
+          <th>Vendedor</th>
+          <th>Método pago</th>
+          <th class="text-end">Total</th>
+          <th class="text-end">Items</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for sale in sales %}
+          <tr>
+            <td>{{ sale.created_at|date:"Y-m-d H:i" }}</td>
+            <td>{{ sale.branch.name }}</td>
+            <td>{% if sale.seller %}{{ sale.seller.username }}{% else %}N/A{% endif %}</td>
+            <td>{{ sale.payment_method }}</td>
+            <td class="text-end">${{ sale.total }}</td>
+            <td class="text-end">{{ sale.item_count|default:0 }}</td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="6" class="text-center py-4">No hay ventas para los filtros seleccionados.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

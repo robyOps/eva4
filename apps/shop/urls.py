@@ -1,6 +1,8 @@
 from django.urls import path
 
 from apps.inventory import web_views as inventory_views
+from apps.sales import web_views as sales_web_views
+from apps.reports import web_views as reports_web_views
 from . import views
 
 urlpatterns = [
@@ -9,6 +11,9 @@ urlpatterns = [
     path('shop/products/<int:pk>/', views.product_detail, name='shop-product-detail'),
     path('shop/cart/', views.cart_view, name='shop-cart'),
     path('shop/checkout/', views.checkout_view, name='shop-checkout'),
+    path('purchases/new/', inventory_views.purchase_create, name='purchase_create'),
+    path('sales/', sales_web_views.sales_list, name='sales_list'),
+    path('reports/stock/', reports_web_views.stock_report, name='report_stock'),
     path('tokens/', views.tokens_view, name='tokens'),
     path('suppliers/', inventory_views.suppliers_list, name='suppliers_list'),
     path('suppliers/create/', inventory_views.supplier_create, name='suppliers_create'),

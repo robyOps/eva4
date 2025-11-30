@@ -15,7 +15,11 @@ class SupplierForm(forms.ModelForm):
         }
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control'}),
-            'rut': forms.TextInput(attrs={'class': 'form-control'}),
+            'rut': forms.TextInput(attrs={
+                'class': 'form-control',
+                'pattern': r'^\d{1,2}\.?\d{3}\.?\d{3}-[\dkK]$',
+                'title': 'Ejemplo: 12.345.678-5',
+            }),
             'contact_name': forms.TextInput(attrs={'class': 'form-control'}),
             'contact_email': forms.EmailInput(attrs={'class': 'form-control'}),
             'contact_phone': forms.TextInput(attrs={'class': 'form-control'}),

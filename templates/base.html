@@ -22,10 +22,16 @@
                     <li class="nav-item"><a class="nav-link" href="{% url 'shop-products' %}">Productos</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'suppliers_list' %}">Proveedores</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'inventory_by_branch' %}">Inventario</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'purchase_create' %}">Compras</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'sales_list' %}">Ventas</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'report_stock' %}">Reporte stock</a></li>
                 {% elif role == 'gerente' %}
                     <li class="nav-item"><a class="nav-link" href="{% url 'shop-products' %}">Productos</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'suppliers_list' %}">Proveedores</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'inventory_by_branch' %}">Inventario</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'purchase_create' %}">Compras</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'sales_list' %}">Ventas</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'report_stock' %}">Reporte stock</a></li>
                 {% elif role == 'vendedor' %}
                     <li class="nav-item"><a class="nav-link" href="{% url 'shop-products' %}">Productos</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'shop-cart' %}">Carro</a></li>
