@@ -1,10 +1,11 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from django.db.models import Sum
+from django.db.models import Sum, Count, Max
 from django.db.models.functions import TruncDay, TruncMonth
+from apps.accounts.permissions import IsAdminOrGerente
 from apps.core.permissions import IsActive, CompanyPlanAllowsReports
-from apps.inventory.models import Inventory, Branch
+from apps.inventory.models import Inventory, Branch, Supplier
 from apps.sales.models import Sale
 
 
@@ -37,4 +38,16 @@ class SalesReportView(APIView):
             qs = qs.filter(created_at__date__lte=date_to)
         annotator = TruncDay('created_at') if group == 'day' else TruncMonth('created_at')
         qs = qs.annotate(period=annotator).values('period').annotate(total=Sum('total')).order_by('period')
+        return Response(qs)
+
+
+class SupplierReportView(APIView):
+    permission_classes = [IsActive, CompanyPlanAllowsReports, IsAdminOrGerente]
+
+    def get(self, request):
+        qs = Supplier.objects.filter(company=request.user.company).annotate(
+            total_purchases=Count('purchase', distinct=True),
+            last_purchase=Max('purchase__date'),
+            products_count=Count('purchase__items__product', distinct=True),
+        ).values('name', 'rut', 'total_purchases', 'products_count', 'last_purchase')
         return Response(qs)

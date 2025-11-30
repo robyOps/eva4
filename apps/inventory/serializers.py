@@ -10,6 +10,12 @@ class ProductSerializer(serializers.ModelSerializer):
         fields = ['id', 'company', 'sku', 'name', 'description', 'price', 'cost', 'category']
         read_only_fields = ['id', 'company']
 
+    def validate_name(self, value):
+        cleaned = value.strip()
+        if len(cleaned) < 3:
+            raise serializers.ValidationError('El nombre debe tener al menos 3 caracteres.')
+        return cleaned
+
     def validate(self, attrs):
         if attrs.get('price', 0) < 0 or attrs.get('cost', 0) < 0:
             raise serializers.ValidationError('Precio y costo deben ser >= 0')

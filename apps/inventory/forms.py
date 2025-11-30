@@ -1,5 +1,5 @@
 from django import forms
-from .models import Supplier
+from .models import Supplier, Branch
 
 
 class SupplierForm(forms.ModelForm):
@@ -39,3 +39,34 @@ class SupplierForm(forms.ModelForm):
         if qs.filter(rut=rut).exists():
             raise forms.ValidationError('Ya existe un proveedor con este RUT en tu compañía')
         return rut
+
+
+class BranchForm(forms.ModelForm):
+    class Meta:
+        model = Branch
+        fields = ['name', 'address', 'phone']
+        labels = {
+            'name': 'Nombre',
+            'address': 'Dirección',
+            'phone': 'Teléfono',
+        }
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'address': forms.TextInput(attrs={'class': 'form-control'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.company = kwargs.pop('company', None)
+        super().__init__(*args, **kwargs)
+
+    def clean_name(self):
+        name = self.cleaned_data['name']
+        qs = Branch.objects.all()
+        if self.company:
+            qs = qs.filter(company=self.company)
+        if self.instance.pk:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.filter(name=name).exists():
+            raise forms.ValidationError('Ya existe una sucursal con este nombre en tu compañía')
+        return name
