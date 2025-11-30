@@ -9,9 +9,10 @@ Proyecto Django + DRF con multi-tenant simple por Company, autenticación JWT (S
 ## Instalación local (sqlite)
 ```bash
 python -m venv venv
-source venv/bin/activate
+venv\Scripts\activate
+python.exe -m pip install --upgrade pip
 pip install -r requirements.txt
-cp .env.example .env
+copy .env.example .env
 python manage.py migrate
 python manage.py createsuperuser
 python manage.py seed_demo
