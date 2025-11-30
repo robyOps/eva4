@@ -20,12 +20,14 @@ python manage.py runserver
 ```
 
 ## Datos de demo
-- Ejecuta `python manage.py seed_demo --reset` para recrear datos completos (company, sucursales, productos, proveedores, inventario).
-- Usuarios de prueba:
+- Ejecuta `python manage.py seed_demo --reset` para recrear datos completos (company DEMO plan Premium con inventario completo).
+- Parámetros útiles: `--products 200 --suppliers 30 --branches 5 --purchases 80 --sales 180 --orders 120` (valores por defecto).
+- Usuarios de prueba (todos con compañía asignada):
   - `admin_cliente` / `demo12345`
   - `gerente` / `demo12345`
   - `vendedor` / `demo12345`
 - Login por sesión: `http://localhost:8000/login/`
+- JWT: botón "Obtener JWT" en el login y página "Tokens API (JWT)" en el menú del usuario.
 
 ## JWT
 - POST `/api/token/` con `username` y `password` -> access/refresh

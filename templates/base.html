@@ -17,6 +17,7 @@
       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
         {% if user.is_authenticated %}
             {% with role=user.role|default:'' %}
+                <li class="nav-item"><a class="nav-link" href="{% url 'dashboard' %}">Dashboard</a></li>
                 {% if role == 'admin_cliente' or role == 'super_admin' %}
                     <li class="nav-item"><a class="nav-link" href="{% url 'shop-products' %}">Productos</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'suppliers_list' %}">Proveedores</a></li>
@@ -34,8 +35,16 @@
       </ul>
       <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
         {% if user.is_authenticated %}
-            <li class="nav-item d-flex align-items-center text-white-50 px-2">Hola, {{ user.username }} ({{ user.role|default:'sin rol' }})</li>
-            <li class="nav-item"><a class="nav-link" href="{% url 'logout' %}">Cerrar sesión</a></li>
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                {{ user.username }} ({{ user.role|default:'sin rol' }})
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="{% url 'tokens' %}">Tokens API (JWT)</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="{% url 'logout' %}">Cerrar sesión</a></li>
+              </ul>
+            </li>
         {% else %}
             <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Login</a></li>
         {% endif %}

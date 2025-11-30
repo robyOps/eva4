@@ -11,6 +11,7 @@
         <button id="jwt-btn" type="button" class="btn btn-outline-secondary btn-sm">Obtener JWT</button>
       </div>
       <div class="card-body">
+        <div id="jwt-alert" class="alert d-none" role="alert"></div>
         <form method="post" class="mb-3" novalidate>
           {% csrf_token %}
           <div class="mb-3">
@@ -25,15 +26,26 @@
             <button class="btn btn-primary" type="submit">Ingresar</button>
           </div>
         </form>
-        <pre id="jwt-output" class="bg-light border rounded p-2 text-break"></pre>
+        <p class="text-muted small mb-0">El botón "Obtener JWT" usa tus mismas credenciales y guarda los tokens en localStorage. No reemplaza el login por sesión.</p>
       </div>
     </div>
   </div>
 </div>
 <script>
+function showJwtAlert(type, message) {
+  const alertBox = document.getElementById('jwt-alert');
+  alertBox.className = `alert alert-${type}`;
+  alertBox.textContent = message;
+  alertBox.classList.remove('d-none');
+}
+
 document.getElementById('jwt-btn').addEventListener('click', async () => {
   const username = document.querySelector('input[name="username"]').value;
   const password = document.querySelector('input[name="password"]').value;
+  if (!username || !password) {
+    showJwtAlert('warning', 'Ingresa usuario y contraseña antes de solicitar el token.');
+    return;
+  }
   try {
     const res = await fetch('/api/token/', {
       method: 'POST',
@@ -44,10 +56,12 @@ document.getElementById('jwt-btn').addEventListener('click', async () => {
     if (res.ok) {
       localStorage.setItem('access', data.access);
       localStorage.setItem('refresh', data.refresh);
+      showJwtAlert('success', 'Tokens guardados en localStorage. Puedes usarlos desde la opción "Tokens API (JWT)" una vez logueado.');
+    } else {
+      showJwtAlert('danger', data.detail || 'No se pudo obtener el token. Verifica tus credenciales.');
     }
-    document.getElementById('jwt-output').textContent = JSON.stringify(data, null, 2);
   } catch (e) {
-    document.getElementById('jwt-output').textContent = e.toString();
+    showJwtAlert('danger', e.toString());
   }
 });
 </script>

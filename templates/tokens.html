@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div>
+        <h3 class="mb-0">Tokens API (JWT)</h3>
+        <small class="text-muted">Gestiona el access/refresh sin perder el login por sesión.</small>
+      </div>
+      <span class="badge bg-primary">{{ username }}</span>
+    </div>
+
+    <div id="token-alert" class="alert d-none" role="alert"></div>
+
+    <div class="card shadow-sm mb-3">
+      <div class="card-header">Estado de los tokens</div>
+      <div class="card-body">
+        <p class="mb-2" id="token-status">No hay tokens guardados en este navegador.</p>
+        <div class="d-flex flex-wrap gap-2">
+          <button class="btn btn-outline-primary" id="copy-access" disabled>Copiar access</button>
+          <button class="btn btn-outline-primary" id="copy-refresh" disabled>Copiar refresh</button>
+          <button class="btn btn-outline-secondary" id="refresh-btn" data-username="{{ username }}" data-bs-toggle="modal" data-bs-target="#tokenModal">Obtener/renovar JWT</button>
+          <button class="btn btn-outline-danger" id="clear-tokens" disabled>Limpiar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="tokenModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Obtener JWT</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-3">Se solicitará un nuevo token con el usuario <strong>{{ username }}</strong>.</p>
+        <div class="mb-3">
+          <label class="form-label">Contraseña</label>
+          <input type="password" class="form-control" id="token-password" placeholder="Ingresa tu contraseña" required>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="confirm-token">Solicitar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const tokenStatus = document.getElementById('token-status');
+const tokenAlert = document.getElementById('token-alert');
+const copyAccessBtn = document.getElementById('copy-access');
+const copyRefreshBtn = document.getElementById('copy-refresh');
+const clearBtn = document.getElementById('clear-tokens');
+const modalEl = document.getElementById('tokenModal');
+const modalInstance = modalEl ? new bootstrap.Modal(modalEl) : null;
+
+function getStoredTokens() {
+  return {
+    access: localStorage.getItem('access'),
+    refresh: localStorage.getItem('refresh')
+  };
+}
+
+function showTokenAlert(type, message) {
+  tokenAlert.className = `alert alert-${type}`;
+  tokenAlert.textContent = message;
+  tokenAlert.classList.remove('d-none');
+}
+
+function refreshState() {
+  const { access, refresh } = getStoredTokens();
+  const hasTokens = !!access && !!refresh;
+  tokenStatus.textContent = hasTokens ? 'Token guardado en localStorage.' : 'No hay tokens guardados en este navegador.';
+  copyAccessBtn.disabled = !access;
+  copyRefreshBtn.disabled = !refresh;
+  clearBtn.disabled = !hasTokens;
+}
+
+async function copyToClipboard(value, label) {
+  if (!value) return;
+  try {
+    await navigator.clipboard.writeText(value);
+    showTokenAlert('success', `${label} copiado al portapapeles.`);
+  } catch (err) {
+    showTokenAlert('warning', 'No se pudo copiar el token.');
+  }
+}
+
+copyAccessBtn.addEventListener('click', () => copyToClipboard(localStorage.getItem('access'), 'Access'));
+copyRefreshBtn.addEventListener('click', () => copyToClipboard(localStorage.getItem('refresh'), 'Refresh'));
+clearBtn.addEventListener('click', () => {
+  localStorage.removeItem('access');
+  localStorage.removeItem('refresh');
+  showTokenAlert('info', 'Tokens eliminados de este navegador.');
+  refreshState();
+});
+
+const confirmBtn = document.getElementById('confirm-token');
+confirmBtn.addEventListener('click', async () => {
+  const passwordField = document.getElementById('token-password');
+  const password = passwordField.value;
+  const username = document.getElementById('refresh-btn').dataset.username;
+  if (!password) {
+    showTokenAlert('warning', 'Ingresa la contraseña para obtener el token.');
+    return;
+  }
+  try {
+    const res = await fetch('/api/token/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      localStorage.setItem('access', data.access);
+      localStorage.setItem('refresh', data.refresh);
+      showTokenAlert('success', 'Nuevo token almacenado en localStorage.');
+      refreshState();
+      passwordField.value = '';
+      if (modalInstance) modalInstance.hide();
+    } else {
+      showTokenAlert('danger', data.detail || 'No se pudo obtener el token.');
+    }
+  } catch (err) {
+    showTokenAlert('danger', err.toString());
+  }
+});
+
+document.addEventListener('DOMContentLoaded', refreshState);
+</script>
+{% endblock %}
