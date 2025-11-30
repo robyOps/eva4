@@ -52,6 +52,11 @@ python manage.py runserver
 - `POST /api/cart/add/` y `POST /api/cart/checkout/`
 - `GET /api/reports/stock/` y `GET /api/reports/sales/` (según plan)
 
+## Documentación
+- Modelo entidad-relación: `docs/MER.md`.
+- Guía de despliegue en EC2: `docs/DEPLOY_EC2.md`.
+- Ejemplos de curl con JWT: `scripts/curl_examples.sh` (requiere `jq`).
+
 ## Planes
 - Básico: 1 sucursal, sin reportes
 - Estándar: 3 sucursales, reportes habilitados
@@ -70,3 +75,11 @@ python manage.py collectstatic --noinput
 
 ## Scripts útiles
 - `scripts/curl_examples.sh` contiene llamadas de ejemplo a la API.
+
+## Checklist de smoke test / QA
+- `python manage.py seed_demo --reset` (datos limpios para demo).
+- Iniciar sesión como **gerente** en el dashboard web y validar: listado de proveedores, inventario por sucursal, registrar compra, registrar venta, reporte de stock/ventas según plan.
+- Iniciar sesión como **vendedor** y validar flujo de catálogo/carrito/checkout.
+- Obtener JWT vía `/api/token/` y consumir endpoints protegidos con `Authorization: Bearer <token>` (ver `scripts/curl_examples.sh`).
+- Para multi-tenant: crear un usuario en otra compañía y confirmar que no visualiza datos cruzados (productos/sucursales/ventas).
+- Para entrega: adjuntar IP pública o Elastic IP y captura de pantalla sirviendo la app detrás de Nginx.
