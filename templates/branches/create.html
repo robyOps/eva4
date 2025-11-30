@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="mb-3 d-flex justify-content-between align-items-center">
+    <h1>Nueva sucursal</h1>
+    <a class="btn btn-secondary" href="{% url 'branches_list' %}">Volver</a>
+</div>
+{% if branch_limit and current_count >= branch_limit %}
+    <div class="alert alert-warning">Límite de sucursales alcanzado para tu plan.</div>
+{% endif %}
+<form method="post" class="card card-body">
+    {% csrf_token %}
+    <div class="mb-3">
+        <label class="form-label" for="id_name">Nombre</label>
+        {{ form.name }}
+        {% if form.name.errors %}<div class="text-danger small">{{ form.name.errors|join:', ' }}</div>{% endif %}
+    </div>
+    <div class="mb-3">
+        <label class="form-label" for="id_address">Dirección</label>
+        {{ form.address }}
+        {% if form.address.errors %}<div class="text-danger small">{{ form.address.errors|join:', ' }}</div>{% endif %}
+    </div>
+    <div class="mb-3">
+        <label class="form-label" for="id_phone">Teléfono</label>
+        {{ form.phone }}
+        {% if form.phone.errors %}<div class="text-danger small">{{ form.phone.errors|join:', ' }}</div>{% endif %}
+    </div>
+    <button type="submit" class="btn btn-primary" {% if branch_limit and current_count >= branch_limit %}disabled{% endif %}>Crear</button>
+</form>
+{% endblock %}

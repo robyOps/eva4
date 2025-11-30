@@ -8,7 +8,9 @@ from django.utils import timezone
 from decimal import Decimal
 
 from apps.accounts.models import User
+from apps.accounts.serializers import UserSerializer
 from apps.inventory.models import Branch, Inventory, Product, Supplier
+from apps.inventory.web_views import _guard_role
 from apps.sales.models import CartItem, Order, Sale
 
 
@@ -126,3 +128,37 @@ def tokens_view(request):
 def logout_view(request):
     logout(request)
     return redirect('login')
+
+
+@login_required
+def subscription_detail(request):
+    denial = _guard_role(request, {User.ROLE_ADMIN_CLIENTE, User.ROLE_SUPER_ADMIN})
+    if denial:
+        return denial
+    subscription = getattr(getattr(request.user, 'company', None), 'subscription', None)
+    return render(request, 'subscription/detail.html', {'subscription': subscription})
+
+
+@login_required
+def user_create_view(request):
+    denial = _guard_role(request, {User.ROLE_ADMIN_CLIENTE})
+    if denial:
+        return denial
+
+    errors = []
+    if request.method == 'POST':
+        data = {
+            'username': request.POST.get('username', ''),
+            'email': request.POST.get('email', ''),
+            'password': request.POST.get('password', ''),
+            'role': request.POST.get('role'),
+            'rut': request.POST.get('rut', ''),
+        }
+        serializer = UserSerializer(data=data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            messages.success(request, 'Usuario creado correctamente')
+            return redirect('dashboard')
+        errors = serializer.errors
+
+    return render(request, 'users/create.html', {'errors': errors})

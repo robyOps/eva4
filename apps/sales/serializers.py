@@ -18,6 +18,14 @@ class SaleSerializer(serializers.ModelSerializer):
         fields = ['id', 'company', 'branch', 'seller', 'total', 'payment_method', 'created_at', 'items']
         read_only_fields = ['id', 'company', 'seller', 'total', 'created_at']
 
+    def validate(self, attrs):
+        created_at_input = self.initial_data.get('created_at') if hasattr(self, 'initial_data') else None
+        if created_at_input:
+            parsed_date = serializers.DateTimeField().to_internal_value(created_at_input)
+            if parsed_date > timezone.now():
+                raise serializers.ValidationError({'created_at': 'La fecha de venta no puede estar en el futuro.'})
+        return attrs
+
     def validate_branch(self, value):
         user = self.context['request'].user
         if value.company != user.company:

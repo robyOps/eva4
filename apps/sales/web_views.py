@@ -6,9 +6,11 @@ from django.shortcuts import render
 from django.db.models import Sum
 
 from apps.accounts.models import User
-from apps.inventory.models import Branch
+from apps.inventory.models import Branch, Product
 from apps.inventory.web_views import _guard_role
 from .models import Sale
+from .serializers import SaleSerializer
+from .services import create_sale
 
 
 @login_required
@@ -57,3 +59,66 @@ def sales_list(request):
         'date_to': date_to,
     }
     return render(request, 'sales/list.html', context)
+
+
+@login_required
+def pos_new_sale(request):
+    allowed_roles = {User.ROLE_ADMIN_CLIENTE, User.ROLE_GERENTE, User.ROLE_VENDEDOR, User.ROLE_SUPER_ADMIN}
+    denial = _guard_role(request, allowed_roles)
+    if denial:
+        return denial
+
+    company = request.user.company
+    branches = Branch.objects.filter(company=company).order_by('name')
+    products = Product.objects.filter(company=company).order_by('name')
+    form_errors = []
+
+    if request.method == 'POST':
+        branch_id = request.POST.get('branch')
+        payment_method = request.POST.get('payment_method') or 'Efectivo'
+        product_ids = request.POST.getlist('item_product')
+        quantities = request.POST.getlist('item_quantity')
+
+        items = []
+        for idx, (pid, qty) in enumerate(zip(product_ids, quantities), start=1):
+            if not pid and not qty:
+                continue
+            if not pid or not qty:
+                form_errors.append(f'Fila {idx}: indica producto y cantidad.')
+                continue
+            try:
+                quantity_int = int(qty)
+                if quantity_int < 1:
+                    raise ValueError
+            except ValueError:
+                form_errors.append(f'Fila {idx}: cantidad inválida (mínimo 1).')
+                continue
+            try:
+                product = products.get(pk=pid)
+            except Product.DoesNotExist:
+                form_errors.append(f'Fila {idx}: producto inválido.')
+                continue
+            items.append({'product': product.id, 'quantity': quantity_int, 'unit_price': str(product.price)})
+
+        data = {
+            'branch': branch_id,
+            'payment_method': payment_method,
+            'items': items,
+        }
+
+        serializer = SaleSerializer(data=data, context={'request': request})
+        if serializer.is_valid() and not form_errors:
+            try:
+                sale = create_sale(serializer.validated_data, request.user)
+                messages.success(request, f'Venta #{sale.id} registrada correctamente')
+                return redirect('sales_list')
+            except Exception as exc:
+                form_errors.append(str(getattr(exc, 'detail', exc)))
+        else:
+            form_errors.extend([f"{key}: {', '.join(map(str, val))}" for key, val in serializer.errors.items()])
+
+    return render(request, 'sales/pos.html', {
+        'branches': branches,
+        'products': products,
+        'form_errors': form_errors,
+    })

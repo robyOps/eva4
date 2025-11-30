@@ -7,7 +7,7 @@ from decimal import Decimal, InvalidOperation
 from rest_framework.exceptions import ValidationError
 
 from apps.accounts.models import User
-from .forms import SupplierForm
+from .forms import SupplierForm, BranchForm
 from .models import Branch, Inventory, Supplier, Product, Purchase, PurchaseItem, InventoryMovement
 from .serializers import PurchaseSerializer
 
@@ -56,6 +56,41 @@ def supplier_create(request):
     else:
         form = SupplierForm(company=request.user.company)
     return render(request, 'suppliers/create.html', {'form': form})
+
+
+@login_required
+def branches_list(request):
+    denial = _guard_role(request, {User.ROLE_ADMIN_CLIENTE, User.ROLE_SUPER_ADMIN})
+    if denial:
+        return denial
+    branches = Branch.objects.filter(company=request.user.company).order_by('name')
+    return render(request, 'branches/list.html', {'branches': branches})
+
+
+@login_required
+def branch_create(request):
+    denial = _guard_role(request, {User.ROLE_ADMIN_CLIENTE, User.ROLE_SUPER_ADMIN})
+    if denial:
+        return denial
+
+    subscription = getattr(request.user.company, 'subscription', None)
+    branch_limit = getattr(subscription, 'branch_limit', None)
+    current_count = Branch.objects.filter(company=request.user.company).count()
+    if branch_limit and current_count >= branch_limit:
+        messages.warning(request, 'Límite de sucursales alcanzado para tu plan. Mejora el plan para crear más.')
+        return redirect('branches_list')
+
+    if request.method == 'POST':
+        form = BranchForm(request.POST, company=request.user.company)
+        if form.is_valid():
+            branch = form.save(commit=False)
+            branch.company = request.user.company
+            branch.save()
+            messages.success(request, 'Sucursal creada correctamente')
+            return redirect('branches_list')
+    else:
+        form = BranchForm(company=request.user.company)
+    return render(request, 'branches/create.html', {'form': form, 'branch_limit': branch_limit, 'current_count': current_count})
 
 
 @login_required

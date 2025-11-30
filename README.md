@@ -51,6 +51,8 @@ python manage.py runserver
 - `POST /api/sales/` descuenta inventario
 - `POST /api/cart/add/` y `POST /api/cart/checkout/`
 - `GET /api/reports/stock/` y `GET /api/reports/sales/` (según plan)
+- `GET /api/reports/suppliers/` reporte agregado de proveedores (según plan)
+- Vistas HTML: `/reports/suppliers/`, `/branches/`, `/branches/new/`, `/subscription/`, `/users/new/`, `/pos/new-sale/`
 
 ## Documentación
 - Modelo entidad-relación: `docs/MER.md`.

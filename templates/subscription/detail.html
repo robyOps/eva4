@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="mb-3 d-flex justify-content-between align-items-center">
+    <h1>Suscripción</h1>
+    <a class="btn btn-secondary" href="{% url 'dashboard' %}">Volver</a>
+</div>
+{% if subscription %}
+    <div class="card">
+        <div class="card-body">
+            <p><strong>Plan:</strong> {{ subscription.get_plan_name_display }}</p>
+            <p><strong>Inicio:</strong> {{ subscription.start_date }}</p>
+            <p><strong>Fin:</strong> {{ subscription.end_date }}</p>
+            <p><strong>Activa:</strong> {{ subscription.active|yesno:"Sí,No" }}</p>
+            <p><strong>Reportes habilitados:</strong> {{ subscription.reports_enabled|yesno:"Sí,No" }}</p>
+            <p><strong>Límite de sucursales:</strong> {{ subscription.branch_limit|default:"Ilimitado" }}</p>
+        </div>
+    </div>
+{% else %}
+    <div class="alert alert-info">No hay suscripción asociada a tu compañía.</div>
+{% endif %}
+{% endblock %}
