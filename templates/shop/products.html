@@ -24,7 +24,15 @@
         <h5 class="card-title">{{ product.name }}</h5>
         <p class="card-text text-muted">{{ product.description }}</p>
         <p class="fw-bold mt-auto">${{ product.price }}</p>
-        <a href="{% url 'shop-product-detail' product.id %}" class="btn btn-primary">Ver</a>
+        <div class="d-flex gap-2">
+          <a href="{% url 'shop-product-detail' product.id %}" class="btn btn-outline-primary">Ver</a>
+          <form method="post" action="{% url 'cart_add' %}" class="d-flex gap-2 align-items-center">
+            {% csrf_token %}
+            <input type="hidden" name="product_id" value="{{ product.id }}">
+            <input type="number" name="quantity" min="1" value="1" class="form-control form-control-sm" style="max-width:90px;">
+            <button type="submit" class="btn btn-primary">Agregar</button>
+          </form>
+        </div>
       </div>
     </div>
   </div>

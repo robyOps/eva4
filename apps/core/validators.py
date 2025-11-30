@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError
 def validate_rut(value: str):
     if not value:
         raise ValidationError('RUT requerido')
-    rut = value.replace('.', '').replace('-', '').upper()
+    rut = value.strip().replace('.', '').replace('-', '').upper()
     if not rut[:-1].isdigit():
         raise ValidationError('Formato de RUT inválido')
     body = rut[:-1]

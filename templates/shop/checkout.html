@@ -8,9 +8,8 @@
   <a href="{% url 'shop-cart' %}" class="btn btn-outline-secondary btn-sm">← Volver al carrito</a>
 </div>
 
-<div id="checkout-alert" class="alert d-none" role="alert"></div>
-
-<form id="checkout-form" class="card shadow-sm" novalidate>
+<form method="post" class="card shadow-sm">
+  {% csrf_token %}
   <div class="card-body">
     <div class="row g-3 mb-3">
       <div class="col-md-6">
@@ -18,12 +17,9 @@
         <select name="branch" id="branch-select" class="form-select" required {% if not has_items %}disabled{% endif %}>
           <option value="">Selecciona sucursal</option>
           {% for branch in branches %}
-            <option value="{{ branch.id }}">{{ branch.name }}</option>
+            <option value="{{ branch.id }}" {% if branch.id|stringformat:'s' == selected_branch_id %}selected{% endif %}>{{ branch.name }}</option>
           {% endfor %}
         </select>
-      </div>
-      <div class="col-md-6 d-flex align-items-end justify-content-end">
-        <small class="text-muted">Este paso usa /api/cart/checkout/. Si necesitas JWT, obtenlo en la pantalla de login o tokens.</small>
       </div>
     </div>
 
@@ -59,64 +55,7 @@
     </div>
   </div>
   <div class="card-footer d-flex justify-content-end">
-    <button class="btn btn-primary" type="submit" id="confirm-btn" {% if not has_items %}disabled{% endif %}>Confirmar compra</button>
+    <button class="btn btn-primary" type="submit" {% if not has_items %}disabled{% endif %}>Confirmar compra</button>
   </div>
 </form>
-
-<script>
-function getCSRFToken() {
-  const csrfCookie = document.cookie.split(';').find((cookie) => cookie.trim().startsWith('csrftoken='));
-  return csrfCookie ? csrfCookie.split('=')[1] : '';
-}
-
-const checkoutForm = document.getElementById('checkout-form');
-const checkoutAlert = document.getElementById('checkout-alert');
-const branchSelect = document.getElementById('branch-select');
-const checkoutBody = document.getElementById('checkout-body');
-const confirmBtn = document.getElementById('confirm-btn');
-const checkoutTotal = document.getElementById('checkout-total');
-
-function showAlert(type, message) {
-  checkoutAlert.className = `alert alert-${type}`;
-  checkoutAlert.textContent = message;
-  checkoutAlert.classList.remove('d-none');
-}
-
-if (checkoutForm) {
-  checkoutForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if (!branchSelect.value) {
-      showAlert('warning', 'Selecciona una sucursal para continuar.');
-      return;
-    }
-    confirmBtn.disabled = true;
-    showAlert('info', 'Procesando checkout...');
-    try {
-      const res = await fetch('/api/cart/checkout/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': getCSRFToken(),
-        },
-        credentials: 'same-origin',
-        body: JSON.stringify({ branch_id: branchSelect.value }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        showAlert('success', `Orden creada con ID ${data.id}. El carrito se ha vaciado.`);
-        checkoutBody.innerHTML = '<tr><td colspan="3" class="text-center py-4">Checkout completado.</td></tr>';
-        if (checkoutTotal) checkoutTotal.textContent = '$0';
-        confirmBtn.disabled = true;
-        branchSelect.disabled = true;
-      } else {
-        showAlert('danger', data.detail || 'No se pudo confirmar el checkout.');
-        confirmBtn.disabled = false;
-      }
-    } catch (err) {
-      showAlert('danger', err.toString());
-      confirmBtn.disabled = false;
-    }
-  });
-}
-</script>
 {% endblock %}

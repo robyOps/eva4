@@ -8,4 +8,13 @@
   <a href="{% url 'shop-products' %}" class="btn btn-outline-secondary">← Volver al catálogo</a>
 </div>
 <p class="fw-bold fs-5">Precio: ${{ product.price }}</p>
+<form method="post" action="{% url 'cart_add' %}" class="card card-body p-3" style="max-width: 400px;">
+  {% csrf_token %}
+  <input type="hidden" name="product_id" value="{{ product.id }}">
+  <div class="mb-3">
+    <label class="form-label">Cantidad</label>
+    <input type="number" name="quantity" min="1" value="1" class="form-control">
+  </div>
+  <button type="submit" class="btn btn-primary">Agregar al carrito</button>
+</form>
 {% endblock %}

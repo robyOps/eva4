@@ -22,53 +22,27 @@
 
 {% if kpis %}
   <div class="row row-cols-1 row-cols-md-3 g-3 mb-4">
+    {% for kpi in kpis %}
     <div class="col">
       <div class="card h-100 shadow-sm">
         <div class="card-body">
-          <h6 class="text-muted">Productos</h6>
-          <h3 class="mb-0">{{ kpis.products }}</h3>
+          <h6 class="text-muted">{{ kpi.title }}</h6>
+          <h3 class="mb-0">{{ kpi.value }}</h3>
         </div>
       </div>
     </div>
-    <div class="col">
-      <div class="card h-100 shadow-sm">
-        <div class="card-body">
-          <h6 class="text-muted">Proveedores</h6>
-          <h3 class="mb-0">{{ kpis.suppliers }}</h3>
-        </div>
-      </div>
-    </div>
-    <div class="col">
-      <div class="card h-100 shadow-sm">
-        <div class="card-body">
-          <h6 class="text-muted">Sucursales</h6>
-          <h3 class="mb-0">{{ kpis.branches }}</h3>
-        </div>
-      </div>
-    </div>
-    <div class="col">
-      <div class="card h-100 shadow-sm">
-        <div class="card-body">
-          <h6 class="text-muted">Ítems de inventario</h6>
-          <h3 class="mb-0">{{ kpis.inventory_rows }}</h3>
-          <small class="text-danger">Stock bajo: {{ kpis.low_stock }}</small>
-        </div>
-      </div>
-    </div>
-    <div class="col">
-      <div class="card h-100 shadow-sm">
-        <div class="card-body">
-          <h6 class="text-muted">Ventas del día</h6>
-          <h3 class="mb-0">{{ kpis.sales_today }}</h3>
-        </div>
-      </div>
-    </div>
-    <div class="col">
-      <div class="card h-100 shadow-sm">
-        <div class="card-body">
-          <h6 class="text-muted">Órdenes pendientes</h6>
-          <h3 class="mb-0">{{ kpis.pending_orders }}</h3>
-        </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+{% if quick_actions %}
+  <div class="card shadow-sm mb-3">
+    <div class="card-body">
+      <h6 class="text-muted">Accesos rápidos</h6>
+      <div class="d-flex flex-wrap gap-2">
+        {% for action in quick_actions %}
+          <a class="btn btn-outline-primary" href="{% url action.url %}">{{ action.label }}</a>
+        {% endfor %}
       </div>
     </div>
   </div>

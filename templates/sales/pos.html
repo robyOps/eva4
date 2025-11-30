@@ -11,34 +11,38 @@
         <select name="branch" class="form-select" required>
             <option value="">Selecciona una sucursal</option>
             {% for branch in branches %}
-                <option value="{{ branch.id }}">{{ branch.name }}</option>
+                <option value="{{ branch.id }}" {% if selected_branch_id == branch.id|stringformat:'s' %}selected{% endif %}>{{ branch.name }}</option>
             {% endfor %}
         </select>
     </div>
     <div class="mb-3">
         <label class="form-label">Medio de pago</label>
-        <input type="text" name="payment_method" class="form-control" value="Efectivo">
+        <input type="text" name="payment_method" class="form-control" value="{{ payment_method_value }}">
     </div>
     <h5>Items</h5>
     <div id="items-container">
-        {% for i in "123" %}
-        <div class="row g-2 align-items-end mb-2">
+        {% for row in item_rows %}
+        <div class="row g-2 align-items-end mb-2 item-row">
             <div class="col-md-6">
                 <label class="form-label">Producto</label>
-                <select name="item_product" class="form-select">
+                <select name="product[]" class="form-select">
                     <option value="">-</option>
                     {% for product in products %}
-                        <option value="{{ product.id }}">{{ product.name }} ({{ product.price }} CLP)</option>
+                        <option value="{{ product.id }}" {% if row.product_id == product.id|stringformat:'s' %}selected{% endif %}>{{ product.name }} ({{ product.price }} CLP)</option>
                     {% endfor %}
                 </select>
             </div>
             <div class="col-md-3">
                 <label class="form-label">Cantidad</label>
-                <input type="number" min="1" name="item_quantity" class="form-control" value="1">
+                <input type="number" min="1" name="quantity[]" class="form-control" value="{{ row.quantity }}">
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="button" class="btn btn-outline-danger w-100 remove-item">Eliminar</button>
             </div>
         </div>
         {% endfor %}
     </div>
+    <button type="button" id="add-item" class="btn btn-outline-secondary btn-sm mb-3">Agregar ítem</button>
     {% if form_errors %}
         <div class="alert alert-danger">
             <ul class="mb-0">
@@ -50,4 +54,57 @@
     {% endif %}
     <button type="submit" class="btn btn-primary">Registrar venta</button>
 </form>
+
+<template id="item-row-template">
+    <div class="row g-2 align-items-end mb-2 item-row">
+        <div class="col-md-6">
+            <label class="form-label">Producto</label>
+            <select name="product[]" class="form-select">
+                <option value="">-</option>
+                {% for product in products %}
+                    <option value="{{ product.id }}">{{ product.name }} ({{ product.price }} CLP)</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Cantidad</label>
+            <input type="number" min="1" name="quantity[]" class="form-control" value="1">
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+            <button type="button" class="btn btn-outline-danger w-100 remove-item">Eliminar</button>
+        </div>
+    </div>
+</template>
+
+<script>
+const container = document.getElementById('items-container');
+const addBtn = document.getElementById('add-item');
+const template = document.getElementById('item-row-template');
+
+function bindRemoveButtons() {
+    container.querySelectorAll('.remove-item').forEach(btn => {
+        btn.onclick = () => {
+            const row = btn.closest('.item-row');
+            if (row) {
+                row.remove();
+            }
+            if (!container.querySelector('.item-row')) {
+                addNewRow();
+            }
+        };
+    });
+}
+
+function addNewRow() {
+    const clone = template.content.cloneNode(true);
+    container.appendChild(clone);
+    bindRemoveButtons();
+}
+
+if (addBtn) {
+    addBtn.addEventListener('click', addNewRow);
+}
+
+bindRemoveButtons();
+</script>
 {% endblock %}

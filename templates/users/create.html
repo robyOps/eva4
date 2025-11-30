@@ -9,11 +9,11 @@
     <div class="row g-3">
         <div class="col-md-6">
             <label class="form-label">Username</label>
-            <input type="text" name="username" class="form-control" required>
+            <input type="text" name="username" class="form-control" value="{{ form_data.username }}" required>
         </div>
         <div class="col-md-6">
             <label class="form-label">Email</label>
-            <input type="email" name="email" class="form-control" required>
+            <input type="email" name="email" class="form-control" value="{{ form_data.email }}" required>
         </div>
         <div class="col-md-6">
             <label class="form-label">Password</label>
@@ -21,13 +21,13 @@
         </div>
         <div class="col-md-6">
             <label class="form-label">RUT</label>
-            <input type="text" name="rut" class="form-control" required>
+            <input type="text" name="rut" class="form-control" value="{{ form_data.rut }}" required>
         </div>
         <div class="col-md-6">
             <label class="form-label">Rol</label>
             <select name="role" class="form-select">
-                <option value="gerente">Gerente</option>
-                <option value="vendedor">Vendedor</option>
+                <option value="gerente" {% if form_data.role == 'gerente' %}selected{% endif %}>Gerente</option>
+                <option value="vendedor" {% if form_data.role == 'vendedor' %}selected{% endif %}>Vendedor</option>
             </select>
         </div>
     </div>

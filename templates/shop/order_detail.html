@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h3 class="mb-0">Orden #{{ order.id }}</h3>
+    <small class="text-muted">{{ order.branch.name }} · {{ order.created_at|date:'Y-m-d H:i' }}</small>
+  </div>
+  <a href="{% url 'shop_orders' %}" class="btn btn-outline-secondary btn-sm">← Volver a órdenes</a>
+</div>
+<div class="card shadow-sm mb-3">
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-md-4">
+        <h6 class="text-muted">Estado</h6>
+        <p class="mb-0">{{ order.get_status_display }}</p>
+      </div>
+      <div class="col-md-4">
+        <h6 class="text-muted">Cliente</h6>
+        <p class="mb-0">{{ order.customer_name }} ({{ order.customer_email }})</p>
+      </div>
+      <div class="col-md-4">
+        <h6 class="text-muted">Total</h6>
+        <p class="mb-0 fw-bold">${{ order.total }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Producto</th>
+          <th class="text-end">Cantidad</th>
+          <th class="text-end">Precio</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in order.items.all %}
+        <tr>
+          <td>{{ item.product.name }}</td>
+          <td class="text-end">{{ item.quantity }}</td>
+          <td class="text-end">${{ item.unit_price }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="3" class="text-center py-4">Sin ítems.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

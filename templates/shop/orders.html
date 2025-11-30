@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h3 class="mb-0">Mis órdenes</h3>
+    <small class="text-muted">Órdenes creadas para tu compañía</small>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'shop-products' %}" class="btn btn-outline-secondary btn-sm">← Seguir comprando</a>
+    <a href="{% url 'shop-cart' %}" class="btn btn-outline-primary btn-sm">Ver carrito</a>
+  </div>
+</div>
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>ID</th>
+          <th>Sucursal</th>
+          <th>Estado</th>
+          <th class="text-end">Total</th>
+          <th>Fecha</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for order in orders %}
+        <tr>
+          <td>#{{ order.id }}</td>
+          <td>{{ order.branch.name }}</td>
+          <td>{{ order.get_status_display }}</td>
+          <td class="text-end">${{ order.total }}</td>
+          <td>{{ order.created_at|date:'Y-m-d H:i' }}</td>
+          <td><a href="{% url 'shop_order_detail' order.id %}" class="btn btn-sm btn-outline-primary">Ver</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-center py-4">Aún no tienes órdenes registradas.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
