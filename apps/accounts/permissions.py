@@ -18,3 +18,7 @@ class IsAdminOrGerente(RolePermission):
 
 class IsInternal(RolePermission):
     allowed_roles = [User.ROLE_ADMIN_CLIENTE, User.ROLE_GERENTE, User.ROLE_VENDEDOR]
+
+
+class IsAdminOrSuper(RolePermission):
+    allowed_roles = [User.ROLE_ADMIN_CLIENTE, User.ROLE_SUPER_ADMIN]

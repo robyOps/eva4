@@ -13,7 +13,11 @@ from .serializers import SaleSerializer, CartItemSerializer, OrderSerializer
 
 class SaleViewSet(viewsets.ModelViewSet):
     serializer_class = SaleSerializer
-    permission_classes = [IsActive, IsInternal]
+
+    def get_permissions(self):
+        if self.action == 'list':
+            return [IsActive(), IsAdminOrGerente()]
+        return [IsActive(), IsInternal()]
 
     def get_queryset(self):
         qs = Sale.objects.filter(company=self.request.user.company)

@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from django.db import transaction
 from apps.core.permissions import IsActive
-from apps.accounts.permissions import IsAdminOrGerente, IsInternal
+from apps.accounts.permissions import IsAdminOrGerente, IsInternal, IsAdminOrSuper
 from .models import Product, Branch, Inventory, InventoryMovement, Supplier, Purchase, PurchaseItem
 from .serializers import (
     ProductSerializer, BranchSerializer, InventorySerializer, InventoryAdjustSerializer,
@@ -37,13 +37,19 @@ class ProductViewSet(viewsets.ModelViewSet):
 
 class BranchViewSet(viewsets.ModelViewSet):
     serializer_class = BranchSerializer
-    permission_classes = [IsActive, IsInternal]
+
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [IsActive(), IsAdminOrSuper()]
+        return [IsActive(), IsInternal()]
 
     def get_queryset(self):
         return Branch.objects.filter(company=self.request.user.company)
 
     def perform_create(self, serializer):
         user = self.request.user
+        if not user.company:
+            raise ValidationError('El usuario debe tener una compañía asignada')
         subscription = getattr(user.company, 'subscription', None)
         if subscription and subscription.branch_limit:
             if Branch.objects.filter(company=user.company).count() >= subscription.branch_limit:
