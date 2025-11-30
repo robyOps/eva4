@@ -1,0 +1,12 @@
+[Unit]
+Description=gunicorn daemon
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/app
+ExecStart=/var/www/app/venv/bin/gunicorn --workers 3 --bind 0.0.0.0:8000 config.wsgi:application
+
+[Install]
+WantedBy=multi-user.target
