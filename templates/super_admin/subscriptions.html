@@ -1,83 +1,111 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h1>Suscripciones</h1>
+    <div>
+        <h1 class="mb-1">Suscripciones</h1>
+        <p class="text-muted mb-0">Gestiona los planes activos de cada empresa desde un solo lugar.</p>
+    </div>
     <a class="btn btn-secondary" href="{% url 'super_admin_dashboard' %}">Volver</a>
 </div>
 <div class="row g-4">
-    <div class="col-lg-6">
-        <div class="card h-100">
+    <div class="col-lg-5">
+        <div class="card h-100 shadow-sm">
+            <div class="card-header bg-light">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-0">Asignar o actualizar</h5>
+                        <small class="text-muted">Selecciona empresa, plan y fechas de vigencia.</small>
+                    </div>
+                </div>
+            </div>
             <div class="card-body">
-                <h5 class="card-title">Asignar o actualizar</h5>
-                <form method="post">
+                <form method="post" class="vstack gap-3">
                     {% csrf_token %}
                     {{ form.non_field_errors }}
-                    <div class="mb-3">
-                        <label class="form-label">Empresa</label>
+                    <div>
+                        <label class="form-label fw-semibold">Empresa</label>
                         {{ form.company }}
                         {{ form.company.errors }}
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Plan</label>
+                    <div>
+                        <label class="form-label fw-semibold">Plan</label>
                         {{ form.plan }}
                         {{ form.plan.errors }}
                     </div>
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label">Inicio</label>
+                            <label class="form-label fw-semibold">Inicio</label>
                             {{ form.start_date }}
                             {{ form.start_date.errors }}
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Fin</label>
+                            <label class="form-label fw-semibold">Fin</label>
                             {{ form.end_date }}
                             {{ form.end_date.errors }}
                         </div>
                     </div>
-                    <div class="mt-3">
-                        <label class="form-label">Estado</label>
+                    <div>
+                        <label class="form-label fw-semibold">Estado</label>
                         {{ form.status }}
                         {{ form.status.errors }}
                     </div>
-                    <div class="mt-3">
-                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    <div class="d-flex justify-content-end gap-2">
+                        <a class="btn btn-outline-secondary" href="{% url 'super_admin_subscriptions' %}">Limpiar</a>
+                        <button type="submit" class="btn btn-primary">Guardar suscripción</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
-    <div class="col-lg-6">
-        <div class="card h-100">
+    <div class="col-lg-7">
+        <div class="card h-100 shadow-sm">
+            <div class="card-header bg-light">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Suscripciones actuales</h5>
+                    <span class="badge bg-primary">{{ subscriptions|length }} activas</span>
+                </div>
+            </div>
             <div class="card-body">
-                <h5 class="card-title">Suscripciones actuales</h5>
                 <div class="table-responsive">
-                    <table class="table align-middle">
-                        <thead>
+                    <table class="table align-middle mb-0">
+                        <thead class="table-light">
                             <tr>
                                 <th>Empresa</th>
                                 <th>Plan</th>
                                 <th>Vigencia</th>
                                 <th>Estado</th>
-                                <th></th>
+                                <th class="text-end">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for subscription in subscriptions %}
                                 <tr>
-                                    <td>{{ subscription.company.name }}</td>
-                                    <td>{{ subscription.plan.name }}</td>
-                                    <td>{{ subscription.start_date }} → {{ subscription.end_date }}</td>
-                                    <td>{{ subscription.get_status_display }}</td>
+                                    <td class="fw-semibold">{{ subscription.company.name }}</td>
                                     <td>
+                                        <span class="badge bg-dark">{{ subscription.plan.name }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="small text-muted">{{ subscription.start_date|date:"d/m/Y" }} → {{ subscription.end_date|date:"d/m/Y" }}</div>
+                                    </td>
+                                    <td>
+                                        {% if subscription.status == 'active' %}
+                                            <span class="badge bg-success">{{ subscription.get_status_display }}</span>
+                                        {% elif subscription.status == 'expired' %}
+                                            <span class="badge bg-warning text-dark">{{ subscription.get_status_display }}</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ subscription.get_status_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
                                         <form method="post" class="d-inline">
                                             {% csrf_token %}
                                             <input type="hidden" name="cancel_id" value="{{ subscription.id }}">
-                                            <button type="submit" class="btn btn-link text-danger p-0">Cancelar</button>
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">Cancelar</button>
                                         </form>
                                     </td>
                                 </tr>
                             {% empty %}
-                                <tr><td colspan="5" class="text-center">Sin suscripciones registradas.</td></tr>
+                                <tr><td colspan="5" class="text-center text-muted">Sin suscripciones registradas.</td></tr>
                             {% endfor %}
                         </tbody>
                     </table>

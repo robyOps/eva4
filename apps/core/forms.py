@@ -18,6 +18,17 @@ class PlanForm(forms.ModelForm):
             'description': forms.Textarea(attrs={'rows': 2}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        control_fields = {'code', 'name', 'description', 'monthly_price', 'branch_limit'}
+        for name, field in self.fields.items():
+            if name in {'features'}:
+                field.widget.attrs.update({'class': 'form-check-input'})
+            elif name == 'is_active':
+                field.widget.attrs.update({'class': 'form-check-input'})
+            elif name in control_fields:
+                field.widget.attrs.update({'class': 'form-control'})
+
 
 class SubscriptionAdminForm(forms.ModelForm):
     class Meta:
@@ -27,6 +38,15 @@ class SubscriptionAdminForm(forms.ModelForm):
             'start_date': forms.DateInput(attrs={'type': 'date'}),
             'end_date': forms.DateInput(attrs={'type': 'date'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        select_fields = {'company', 'plan', 'status'}
+        for name, field in self.fields.items():
+            if name in select_fields:
+                field.widget.attrs.update({'class': 'form-select'})
+            else:
+                field.widget.attrs.update({'class': 'form-control'})
 
     def clean(self):
         cleaned = super().clean()
