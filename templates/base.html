@@ -10,7 +10,7 @@
 {% load plan_tags %}
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
   <div class="container-fluid">
-    <a class="navbar-brand" href="{% url 'dashboard' %}">ERP</a>
+    <a class="navbar-brand" href="{% if user.role == 'super_admin' %}{% url 'super_admin_dashboard' %}{% else %}{% url 'dashboard' %}{% endif %}">ERP</a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
@@ -22,12 +22,9 @@
                 {% plan_allows_feature 'sales' as can_sales %}
                 {% plan_allows_feature 'reports' as can_reports %}
                 {% plan_allows_feature 'pos' as can_pos %}
-                <li class="nav-item"><a class="nav-link" href="{% url 'dashboard' %}">Dashboard</a></li>
+                <li class="nav-item"><a class="nav-link" href="{% if role == 'super_admin' %}{% url 'super_admin_dashboard' %}{% else %}{% url 'dashboard' %}{% endif %}">Dashboard</a></li>
                 {% if role == 'super_admin' %}
-                    <li class="nav-item"><a class="nav-link" href="{% url 'branches_list' %}">Sucursales</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'subscription_detail' %}">Suscripción</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'super_admin_dashboard' %}">Super Admin</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'user_create' %}">Usuarios (crear)</a></li>
                 {% elif role == 'admin_cliente' %}
                     <li class="nav-item"><a class="nav-link" href="{% url 'shop-products' %}">Productos</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'suppliers_list' %}">Proveedores</a></li>
@@ -39,7 +36,7 @@
                     <li class="nav-item"><a class="nav-link" href="{% url 'report_suppliers' %}">Reporte proveedores</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'branches_list' %}">Sucursales</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'subscription_detail' %}">Suscripción</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'user_create' %}">Usuarios (crear)</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'user_create' %}">Gestión de usuarios</a></li>
                 {% elif role == 'gerente' %}
                     {% if can_inventory %}
                         <li class="nav-item"><a class="nav-link" href="{% url 'shop-products' %}">Productos</a></li>

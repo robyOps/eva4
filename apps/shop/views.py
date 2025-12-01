@@ -28,6 +28,8 @@ def login_view(request):
         user = authenticate(request, username=username, password=password)
         if user:
             login(request, user)
+            if getattr(user, 'role', None) == User.ROLE_SUPER_ADMIN:
+                return redirect('super_admin_dashboard')
             return redirect('dashboard')
         messages.error(request, 'Credenciales inválidas, intenta nuevamente o usa el botón de JWT con tu usuario y contraseña.')
     return render(request, 'login.html')
@@ -35,6 +37,10 @@ def login_view(request):
 
 @login_required
 def dashboard(request):
+    if request.user.role == User.ROLE_SUPER_ADMIN:
+        messages.info(request, 'Accede al panel de Super Admin para gestionar planes y compañías.')
+        return redirect('super_admin_dashboard')
+
     company = getattr(request.user, 'company', None)
     if not company:
         context = {'missing_company': True}
@@ -91,7 +97,7 @@ def dashboard(request):
         ]
         quick_actions = [
             {'label': 'Sucursales', 'url': 'branches_list'},
-            {'label': 'Usuarios', 'url': 'user_create'},
+            {'label': 'Gestión de usuarios', 'url': 'user_create'},
             {'label': 'Suscripción', 'url': 'subscription_detail'},
             {'label': 'Ventas', 'url': 'sales_list'},
         ]
@@ -293,7 +299,11 @@ def logout_view(request):
 
 @login_required
 def subscription_detail(request):
-    denial = _guard_role(request, {User.ROLE_ADMIN_CLIENTE, User.ROLE_SUPER_ADMIN, User.ROLE_GERENTE})
+    if request.user.role == User.ROLE_SUPER_ADMIN:
+        messages.error(request, 'El super admin administra planes desde su propio panel, sin suscripciones asociadas.')
+        return redirect('super_admin_dashboard')
+
+    denial = _guard_role(request, {User.ROLE_ADMIN_CLIENTE, User.ROLE_GERENTE})
     if denial:
         return denial
 
@@ -328,7 +338,6 @@ def subscription_detail(request):
         'subscription': subscription,
         'plans': plans,
         'plan_features': plan_features,
-        'is_super_admin': request.user.role == User.ROLE_SUPER_ADMIN,
     }
     return render(request, 'subscription/detail.html', context)
 

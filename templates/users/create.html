@@ -8,26 +8,27 @@
     {% csrf_token %}
     <div class="row g-3">
         <div class="col-md-6">
-            <label class="form-label">Username</label>
-            <input type="text" name="username" class="form-control" value="{{ form_data.username }}" required>
+            <label class="form-label">Nombre de usuario</label>
+            <input type="text" name="username" class="form-control" value="{{ form_data.username }}" required pattern="^[a-zA-Z0-9_.-]{4,20}$" title="Usa entre 4 y 20 caracteres, solo letras, números, guiones y puntos.">
         </div>
         <div class="col-md-6">
-            <label class="form-label">Email</label>
-            <input type="email" name="email" class="form-control" value="{{ form_data.email }}" required>
+            <label class="form-label">Correo electrónico</label>
+            <input type="email" name="email" class="form-control" value="{{ form_data.email }}" required placeholder="persona@empresa.cl">
         </div>
         <div class="col-md-6">
-            <label class="form-label">Password</label>
-            <input type="password" name="password" class="form-control" required>
+            <label class="form-label">Contraseña</label>
+            <input type="password" name="password" class="form-control" required minlength="8" aria-describedby="passwordHelp" placeholder="Mínimo 8 caracteres">
+            <div id="passwordHelp" class="form-text">Incluye números y letras para cumplir buenas prácticas locales.</div>
         </div>
         <div class="col-md-6">
             <label class="form-label">RUT</label>
-            <input type="text" name="rut" class="form-control" value="{{ form_data.rut }}" required>
+            <input type="text" name="rut" class="form-control" value="{{ form_data.rut }}" required pattern="^\d{1,2}\.?(\d{3})\.?(\d{3})-?[\dkK]{1}$" placeholder="12.345.678-5" title="Ingresa el RUT chileno con dígito verificador, con o sin puntos y guión.">
         </div>
         <div class="col-md-6">
             <label class="form-label">Rol</label>
             <select name="role" class="form-select">
-                <option value="gerente" {% if form_data.role == 'gerente' %}selected{% endif %}>Gerente</option>
-                <option value="vendedor" {% if form_data.role == 'vendedor' %}selected{% endif %}>Vendedor</option>
+                <option value="gerente" {% if form_data.role == 'gerente' %}selected{% endif %}>Gerente (puede administrar inventario y reportes)</option>
+                <option value="vendedor" {% if form_data.role == 'vendedor' %}selected{% endif %}>Vendedor (venta en línea/POS)</option>
             </select>
         </div>
     </div>
