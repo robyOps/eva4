@@ -1,3 +1,4 @@
+from datetime import timedelta
 from decimal import Decimal
 
 from django.contrib import messages
@@ -13,6 +14,7 @@ from apps.accounts.models import User
 from apps.accounts.serializers import UserSerializer
 from rest_framework.exceptions import ValidationError
 
+from apps.core.models import Company, Subscription
 from apps.inventory.models import Branch, Inventory, InventoryMovement, Product, Supplier
 from apps.inventory.web_views import _guard_role
 from apps.sales.models import CartItem, Order, OrderItem, Sale
@@ -290,11 +292,56 @@ def logout_view(request):
 
 @login_required
 def subscription_detail(request):
-    denial = _guard_role(request, {User.ROLE_ADMIN_CLIENTE, User.ROLE_SUPER_ADMIN})
+    denial = _guard_role(request, {User.ROLE_ADMIN_CLIENTE, User.ROLE_SUPER_ADMIN, User.ROLE_GERENTE})
     if denial:
         return denial
-    subscription = getattr(getattr(request.user, 'company', None), 'subscription', None)
-    return render(request, 'subscription/detail.html', {'subscription': subscription})
+
+    company = getattr(request.user, 'company', None)
+    subscription = getattr(company, 'subscription', None) if company else None
+
+    if request.method == 'POST':
+        if not company:
+            messages.error(request, 'Asocia el usuario a una compañía antes de comprar una suscripción.')
+            return redirect('subscription_detail')
+
+        plan_name = request.POST.get('plan', Subscription.PLAN_BASICO)
+        start_date = timezone.now().date()
+        end_date = start_date + timedelta(days=365)
+        subscription, _ = Subscription.objects.update_or_create(
+            company=company,
+            defaults={
+                'plan_name': plan_name,
+                'start_date': start_date,
+                'end_date': end_date,
+                'active': True,
+            },
+        )
+        messages.success(request, 'Suscripción activada automáticamente para tu compañía.')
+        return redirect('subscription_detail')
+
+    context = {
+        'subscription': subscription,
+        'plan_choices': Subscription.PLAN_CHOICES,
+        'is_super_admin': request.user.role == User.ROLE_SUPER_ADMIN,
+    }
+    return render(request, 'subscription/detail.html', context)
+
+
+@login_required
+def super_admin_dashboard(request):
+    denial = _guard_role(request, {User.ROLE_SUPER_ADMIN})
+    if denial:
+        return denial
+
+    companies = Company.objects.all().prefetch_related('users')
+    user_count = User.objects.count()
+    active_subscriptions = Subscription.objects.filter(active=True).count()
+    context = {
+        'companies': companies,
+        'user_count': user_count,
+        'active_subscriptions': active_subscriptions,
+    }
+    return render(request, 'super_admin/dashboard.html', context)
 
 
 @login_required

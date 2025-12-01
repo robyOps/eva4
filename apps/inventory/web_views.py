@@ -21,6 +21,8 @@ def _guard_role(request, allowed_roles):
     if not _user_has_role(request.user, allowed_roles):
         messages.error(request, 'No tienes permisos para acceder a esta sección.')
         return redirect('dashboard')
+    if getattr(request.user, 'role', None) == User.ROLE_SUPER_ADMIN:
+        return None
     if not request.user.company:
         messages.error(request, 'Debes pertenecer a una compañía para ver esta sección.')
         return redirect('dashboard')

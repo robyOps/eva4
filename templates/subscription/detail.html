@@ -15,7 +15,38 @@
             <p><strong>Límite de sucursales:</strong> {{ subscription.branch_limit|default:"Ilimitado" }}</p>
         </div>
     </div>
+    <div class="mt-3">
+        <form method="post" class="d-flex align-items-end gap-2">
+            {% csrf_token %}
+            <div>
+                <label class="form-label">Plan</label>
+                <select class="form-select" name="plan">
+                    {% for value, label in plan_choices %}
+                        <option value="{{ value }}" {% if subscription.plan_name == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Comprar/Renovar automáticamente</button>
+        </form>
+    </div>
 {% else %}
     <div class="alert alert-info">No hay suscripción asociada a tu compañía.</div>
+    <form method="post" class="card p-3">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label class="form-label">Plan</label>
+            <select class="form-select" name="plan">
+                {% for value, label in plan_choices %}
+                    <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-success">Comprar suscripción ahora</button>
+    </form>
+{% endif %}
+{% if is_super_admin %}
+    <div class="mt-4 alert alert-secondary">
+        Como super admin puedes revisar la vista dedicada en <a href="{% url 'super_admin_dashboard' %}">Panel Super Admin</a>.
+    </div>
 {% endif %}
 {% endblock %}

@@ -29,6 +29,9 @@
                     <li class="nav-item"><a class="nav-link" href="{% url 'report_suppliers' %}">Reporte proveedores</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'branches_list' %}">Sucursales</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'subscription_detail' %}">Suscripción</a></li>
+                    {% if role == 'super_admin' %}
+                        <li class="nav-item"><a class="nav-link" href="{% url 'super_admin_dashboard' %}">Super Admin</a></li>
+                    {% endif %}
                     <li class="nav-item"><a class="nav-link" href="{% url 'user_create' %}">Usuarios (crear)</a></li>
                 {% elif role == 'gerente' %}
                     <li class="nav-item"><a class="nav-link" href="{% url 'shop-products' %}">Productos</a></li>
@@ -39,6 +42,7 @@
                     <li class="nav-item"><a class="nav-link" href="{% url 'shop_orders' %}">Órdenes</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'report_stock' %}">Reporte stock</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'report_suppliers' %}">Reporte proveedores</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'subscription_detail' %}">Suscripción</a></li>
                 {% elif role == 'vendedor' %}
                     <li class="nav-item"><a class="nav-link" href="{% url 'shop-products' %}">Productos</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'shop-cart' %}">Carro</a></li>
