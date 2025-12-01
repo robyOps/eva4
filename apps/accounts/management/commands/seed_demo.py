@@ -44,6 +44,7 @@ class Command(BaseCommand):
                 'users': [
                     ('catalina.vera', User.ROLE_ADMIN_CLIENTE, 'catalina.vera@pacifico.cl', self._rut_with_dv(13875432)),
                     ('rodrigo.palma', User.ROLE_GERENTE, 'rodrigo.palma@pacifico.cl', self._rut_with_dv(14789654)),
+                    ('francisca.munoz', User.ROLE_VENDEDOR, 'francisca.munoz@pacifico.cl', self._rut_with_dv(18234567)),
                 ],
             },
             {
@@ -51,6 +52,15 @@ class Command(BaseCommand):
                 'users': [
                     ('alejandra.perez', User.ROLE_ADMIN_CLIENTE, 'alejandra.perez@tecnored.cl', self._rut_with_dv(15987456)),
                     ('jorge.acevedo', User.ROLE_GERENTE, 'jorge.acevedo@tecnored.cl', self._rut_with_dv(16874521)),
+                    ('isidora.galvez', User.ROLE_VENDEDOR, 'isidora.galvez@tecnored.cl', self._rut_with_dv(17654329)),
+                ],
+            },
+            {
+                'company': ('Energix Solar Group', self._rut_with_dv(70459812), 'PREMIUM'),
+                'users': [
+                    ('marcela.espinoza', User.ROLE_ADMIN_CLIENTE, 'marcela.espinoza@energix.cl', self._rut_with_dv(19876543)),
+                    ('daniel.rivera', User.ROLE_GERENTE, 'daniel.rivera@energix.cl', self._rut_with_dv(20567891)),
+                    ('constanza.rojas', User.ROLE_VENDEDOR, 'constanza.rojas@energix.cl', self._rut_with_dv(21456780)),
                 ],
             },
         ]
@@ -88,6 +98,9 @@ class Command(BaseCommand):
             self._create_cart_items(users['vendedor'], products)
 
             Inventory.objects.bulk_update(list(inventory_cache.values()), ['stock', 'reorder_point'])
+
+            for extra in extra_companies:
+                self._seed_additional_company_data(extra, options)
 
         self._print_summary(company, usernames, super_admin, extra_companies)
 
@@ -225,8 +238,49 @@ class Command(BaseCommand):
                 user.set_password('demo12345')
                 user.save()
                 users.append(user)
-            created.append((company, users))
+            created.append({
+                'company': company,
+                'users': self._group_users_by_role(users),
+                'plan_code': plan_code,
+            })
         return created
+
+    def _group_users_by_role(self, users):
+        grouped = {'admin_cliente': None, 'gerente': None, 'vendedor': None}
+        for user in users:
+            if user.role == user.ROLE_ADMIN_CLIENTE:
+                grouped['admin_cliente'] = user
+            elif user.role == user.ROLE_GERENTE:
+                grouped['gerente'] = user
+            elif user.role == user.ROLE_VENDEDOR:
+                grouped['vendedor'] = user
+        return grouped
+
+    def _seed_additional_company_data(self, spec, options):
+        company = spec['company']
+        users = spec['users']
+        branches = self._ensure_branches(company, max(2, options['branches'] // 2))
+        products = self._ensure_products(company, max(40, options['products'] // 3))
+        suppliers = self._ensure_suppliers(company, max(10, options['suppliers'] // 3))
+
+        inventory_cache = self._seed_inventories(company, branches, products)
+        purchaser = users.get('gerente') or users.get('admin_cliente')
+        seller = users.get('vendedor') or purchaser
+
+        demo_options = options | {
+            'purchases': max(30, options['purchases'] // 2),
+            'sales': max(60, options['sales'] // 2),
+            'orders': max(40, options['orders'] // 3),
+        }
+        if purchaser:
+            self._create_purchases(company, branches, suppliers, products, inventory_cache, purchaser, demo_options)
+        if seller:
+            self._create_sales(company, branches, products, inventory_cache, seller, demo_options)
+        self._create_orders(company, branches, products, inventory_cache, demo_options)
+        if seller:
+            self._create_cart_items(seller, products)
+
+        Inventory.objects.bulk_update(list(inventory_cache.values()), ['stock', 'reorder_point'])
 
     def _ensure_branches(self, company: Company, target: int) -> list[Branch]:
         names = [
@@ -605,8 +659,10 @@ class Command(BaseCommand):
         self.stdout.write('')
         self.stdout.write(f'Superadmin: {super_admin.username} / demo12345')
         self.stdout.write('Cuentas en otros planes:')
-        for extra_company, users in extra_companies:
-            plan = extra_company.subscription.plan.name if hasattr(extra_company, 'subscription') else 'SIN PLAN'
-            self.stdout.write(f'- {extra_company.name} ({plan})')
+        for extra_company in extra_companies:
+            company_obj = extra_company['company']
+            users = [u for u in extra_company['users'].values() if u]
+            plan = company_obj.subscription.plan.name if hasattr(company_obj, 'subscription') else 'SIN PLAN'
+            self.stdout.write(f'- {company_obj.name} ({plan})')
             for user in users:
                 self.stdout.write(f"  * {user.username} ({user.get_role_display()}) / demo12345")

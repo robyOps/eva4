@@ -14,6 +14,7 @@ from apps.accounts.models import User
 from apps.accounts.serializers import UserSerializer
 from rest_framework.exceptions import ValidationError
 
+from apps.core.access import plan_allows
 from apps.core.forms import PlanForm, SubscriptionAdminForm
 from apps.core.models import Company, Plan, PlanFeature, Subscription
 from apps.inventory.models import Branch, Inventory, InventoryMovement, Product, Supplier
@@ -59,6 +60,8 @@ def dashboard(request):
     role = request.user.role
     has_data = products.exists() or suppliers.exists() or inventories.exists()
 
+    reports_enabled = plan_allows(request.user, 'reports')
+
     if role == User.ROLE_VENDEDOR:
         kpis = [
             {'title': 'Productos disponibles', 'value': products.count()},
@@ -83,9 +86,10 @@ def dashboard(request):
         quick_actions = [
             {'label': 'Inventario', 'url': 'inventory_by_branch'},
             {'label': 'Proveedores', 'url': 'suppliers_list'},
-            {'label': 'Reportes', 'url': 'report_stock'},
             {'label': 'Ventas', 'url': 'sales_list'},
         ]
+        if reports_enabled:
+            quick_actions.insert(2, {'label': 'Reportes', 'url': 'report_stock'})
     else:
         kpis = [
             {'title': 'Productos', 'value': products.count()},
@@ -108,6 +112,7 @@ def dashboard(request):
         'quick_actions': quick_actions,
         'role': role,
         'has_data': has_data,
+        'reports_enabled': reports_enabled,
     }
     return render(request, 'dashboard.html', context)
 
