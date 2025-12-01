@@ -31,18 +31,20 @@
                 {% else %}
                     <li class="nav-item"><a class="nav-link" href="{% url 'dashboard' %}">Dashboard</a></li>
                 {% endif %}
-                {% if role == 'admin_cliente' %}
-                    <li class="nav-item"><a class="nav-link" href="{% url 'shop-products' %}">Productos</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'suppliers_list' %}">Proveedores</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'inventory_by_branch' %}">Inventario</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'purchase_create' %}">Compras</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'sales_list' %}">Ventas</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'shop_orders' %}">Órdenes</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'report_stock' %}">Reporte stock</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'report_suppliers' %}">Reporte proveedores</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'branches_list' %}">Sucursales</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'subscription_detail' %}">Suscripción</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'user_create' %}">Gestión de usuarios</a></li>
+                  {% if role == 'admin_cliente' %}
+                      <li class="nav-item"><a class="nav-link" href="{% url 'shop-products' %}">Productos</a></li>
+                      <li class="nav-item"><a class="nav-link" href="{% url 'suppliers_list' %}">Proveedores</a></li>
+                      <li class="nav-item"><a class="nav-link" href="{% url 'inventory_by_branch' %}">Inventario</a></li>
+                      <li class="nav-item"><a class="nav-link" href="{% url 'purchase_create' %}">Compras</a></li>
+                      <li class="nav-item"><a class="nav-link" href="{% url 'sales_list' %}">Ventas</a></li>
+                      <li class="nav-item"><a class="nav-link" href="{% url 'shop_orders' %}">Órdenes</a></li>
+                      {% if can_reports %}
+                          <li class="nav-item"><a class="nav-link" href="{% url 'report_stock' %}">Reporte stock</a></li>
+                          <li class="nav-item"><a class="nav-link" href="{% url 'report_suppliers' %}">Reporte proveedores</a></li>
+                      {% endif %}
+                      <li class="nav-item"><a class="nav-link" href="{% url 'branches_list' %}">Sucursales</a></li>
+                      <li class="nav-item"><a class="nav-link" href="{% url 'subscription_detail' %}">Suscripción</a></li>
+                      <li class="nav-item"><a class="nav-link" href="{% url 'user_create' %}">Gestión de usuarios</a></li>
                 {% elif role == 'gerente' %}
                     {% if can_inventory %}
                         <li class="nav-item"><a class="nav-link" href="{% url 'shop-products' %}">Productos</a></li>
