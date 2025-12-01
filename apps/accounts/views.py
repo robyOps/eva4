@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from apps.core.permissions import IsActive
+from .permissions import IsAdminOrSuper
 from .serializers import UserSerializer, MeSerializer
 
 User = get_user_model()
@@ -11,7 +12,7 @@ User = get_user_model()
 
 class UserCreateView(generics.CreateAPIView):
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticated, IsActive]
+    permission_classes = [permissions.IsAuthenticated, IsActive, IsAdminOrSuper]
 
     def get_queryset(self):
         return User.objects.all()

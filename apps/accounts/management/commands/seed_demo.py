@@ -38,17 +38,38 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         User = get_user_model()
         reset = options.get('reset')
-        usernames = ['admin_cliente', 'gerente', 'vendedor']
+        additional_specs = [
+            {
+                'company': ('Empresa Demo - Plan Básico', '55555555-5', Subscription.PLAN_BASICO),
+                'users': [
+                    ('admin_basico', User.ROLE_ADMIN_CLIENTE, 'admin_basico@example.com', '55555555-5'),
+                    ('gerente_basico', User.ROLE_GERENTE, 'gerente_basico@example.com', '66666666-6'),
+                ],
+            },
+            {
+                'company': ('Empresa Demo - Plan Estándar', '77777777-7', Subscription.PLAN_ESTANDAR),
+                'users': [
+                    ('admin_estandar', User.ROLE_ADMIN_CLIENTE, 'admin_estandar@example.com', '77777777-7'),
+                    ('gerente_estandar', User.ROLE_GERENTE, 'gerente_estandar@example.com', '88888888-8'),
+                ],
+            },
+        ]
+        usernames = ['superadmin', 'admin_cliente', 'gerente', 'vendedor'] + [
+            username for spec in additional_specs for username, *_ in spec['users']
+        ]
         company_name = 'Empresa Demo - Plan Premium'
         company_rut = '11111111-1'
+        all_company_ruts = [company_rut] + [spec['company'][1] for spec in additional_specs]
 
         if reset:
-            self._reset_demo_data(company_rut, usernames)
+            self._reset_demo_data(all_company_ruts, usernames)
 
         with transaction.atomic():
+            super_admin = self._ensure_super_admin(User)
             company = self._ensure_company(company_name, company_rut)
             self._ensure_subscription(company)
             users = self._ensure_users(User, company)
+            extra_companies = self._ensure_additional_companies(User, additional_specs)
 
             existing_products = Product.objects.filter(company=company).count()
             if not reset and existing_products > max(50, options['products'] // 2):
@@ -67,7 +88,7 @@ class Command(BaseCommand):
 
             Inventory.objects.bulk_update(list(inventory_cache.values()), ['stock', 'reorder_point'])
 
-        self._print_summary(company, usernames)
+        self._print_summary(company, usernames, super_admin, extra_companies)
 
     def _rut_with_dv(self, number: int) -> str:
         digits = str(number)
@@ -79,11 +100,31 @@ class Command(BaseCommand):
         dv = '0' if mod == 11 else 'K' if mod == 10 else str(mod)
         return f"{digits}-{dv}"
 
-    def _reset_demo_data(self, company_rut: str, usernames: list[str]):
+    def _reset_demo_data(self, company_ruts: list[str], usernames: list[str]):
         self.stdout.write('Limpiando datos previos...')
-        Company.objects.filter(rut=company_rut).delete()
+        Company.objects.filter(rut__in=company_ruts).delete()
         CartItem.objects.filter(user__username__in=usernames).delete()
         get_user_model().objects.filter(username__in=usernames).delete()
+
+    def _ensure_super_admin(self, User):
+        user, _ = User.objects.get_or_create(
+            username='superadmin',
+            defaults={
+                'email': 'superadmin@example.com',
+                'rut': '99999999-9',
+                'role': User.ROLE_SUPER_ADMIN,
+                'is_staff': True,
+                'is_superuser': True,
+            },
+        )
+        user.role = User.ROLE_SUPER_ADMIN
+        user.email = 'superadmin@example.com'
+        user.rut = '99999999-9'
+        user.is_staff = True
+        user.is_superuser = True
+        user.set_password('demo12345')
+        user.save()
+        return user
 
     def _ensure_company(self, name: str, rut: str) -> Company:
         company, _ = Company.objects.get_or_create(rut=rut, defaults={'name': name})
@@ -92,11 +133,12 @@ class Command(BaseCommand):
             company.save(update_fields=['name'])
         return company
 
-    def _ensure_subscription(self, company: Company):
+    def _ensure_subscription(self, company: Company, plan_name: str | None = None):
+        plan = plan_name or Subscription.PLAN_PREMIUM
         Subscription.objects.update_or_create(
             company=company,
             defaults={
-                'plan_name': Subscription.PLAN_PREMIUM,
+                'plan_name': plan,
                 'start_date': timezone.now().date(),
                 'end_date': timezone.now().date() + timedelta(days=365),
                 'active': True,
@@ -128,6 +170,33 @@ class Command(BaseCommand):
             user.save()
             users[role.split('_')[-1] if role != User.ROLE_ADMIN_CLIENTE else 'admin_cliente'] = user
         return {'admin_cliente': users.get('admin_cliente'), 'gerente': users.get('gerente'), 'vendedor': users.get('vendedor')}
+
+    def _ensure_additional_companies(self, User, specs):
+        created = []
+        for spec in specs:
+            company_name, rut, plan_name = spec['company']
+            company = self._ensure_company(company_name, rut)
+            self._ensure_subscription(company, plan_name)
+            users = []
+            for username, role, email, user_rut in spec['users']:
+                user, _ = User.objects.get_or_create(
+                    username=username,
+                    defaults={
+                        'email': email,
+                        'rut': user_rut,
+                        'role': role,
+                        'company': company,
+                    },
+                )
+                user.role = role
+                user.company = company
+                user.email = email
+                user.rut = user_rut
+                user.set_password('demo12345')
+                user.save()
+                users.append(user)
+            created.append((company, users))
+        return created
 
     def _ensure_branches(self, company: Company, target: int) -> list[Branch]:
         names = [
@@ -458,7 +527,7 @@ class Command(BaseCommand):
         if cart_items:
             CartItem.objects.bulk_create(cart_items, ignore_conflicts=True)
 
-    def _print_summary(self, company: Company, usernames: list[str]):
+    def _print_summary(self, company: Company, usernames: list[str], super_admin, extra_companies):
         inventory_rows = Inventory.objects.filter(company=company).count()
         purchases = Purchase.objects.filter(company=company).count()
         purchase_items = PurchaseItem.objects.filter(purchase__company=company).count()
@@ -490,3 +559,11 @@ class Command(BaseCommand):
         self.stdout.write('Usuarios demo:')
         for username in usernames:
             self.stdout.write(f'- {username} / demo12345')
+        self.stdout.write('')
+        self.stdout.write(f'Superadmin: {super_admin.username} / demo12345')
+        self.stdout.write('Cuentas en otros planes:')
+        for extra_company, users in extra_companies:
+            plan = extra_company.subscription.plan_name if hasattr(extra_company, 'subscription') else 'SIN PLAN'
+            self.stdout.write(f'- {extra_company.name} ({plan})')
+            for user in users:
+                self.stdout.write(f"  * {user.username} ({user.get_role_display()}) / demo12345")
