@@ -24,6 +24,10 @@
                 {% plan_allows_feature 'pos' as can_pos %}
                 {% if role == 'super_admin' %}
                     <li class="nav-item"><a class="nav-link" href="{% url 'super_admin_dashboard' %}">Panel Super Admin</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'super_admin_plans' %}">Planes</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'super_admin_subscriptions' %}">Suscripciones</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'admin:accounts_user_changelist' %}">Usuarios</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'admin:core_company_changelist' %}">Empresas</a></li>
                 {% else %}
                     <li class="nav-item"><a class="nav-link" href="{% url 'dashboard' %}">Dashboard</a></li>
                 {% endif %}
