@@ -40,25 +40,25 @@ class Command(BaseCommand):
         reset = options.get('reset')
         additional_specs = [
             {
-                'company': ('Empresa Demo - Plan Básico', '55555555-5', 'BASICO'),
+                'company': ('Logística Pacífico Ltda.', self._rut_with_dv(76543210), 'BASICO'),
                 'users': [
-                    ('admin_basico', User.ROLE_ADMIN_CLIENTE, 'admin_basico@example.com', '55555555-5'),
-                    ('gerente_basico', User.ROLE_GERENTE, 'gerente_basico@example.com', '66666666-6'),
+                    ('catalina.vera', User.ROLE_ADMIN_CLIENTE, 'catalina.vera@pacifico.cl', self._rut_with_dv(13875432)),
+                    ('rodrigo.palma', User.ROLE_GERENTE, 'rodrigo.palma@pacifico.cl', self._rut_with_dv(14789654)),
                 ],
             },
             {
-                'company': ('Empresa Demo - Plan Estándar', '77777777-7', 'ESTANDAR'),
+                'company': ('Tecnored Chile S.A.', self._rut_with_dv(77345678), 'ESTANDAR'),
                 'users': [
-                    ('admin_estandar', User.ROLE_ADMIN_CLIENTE, 'admin_estandar@example.com', '77777777-7'),
-                    ('gerente_estandar', User.ROLE_GERENTE, 'gerente_estandar@example.com', '88888888-8'),
+                    ('alejandra.perez', User.ROLE_ADMIN_CLIENTE, 'alejandra.perez@tecnored.cl', self._rut_with_dv(15987456)),
+                    ('jorge.acevedo', User.ROLE_GERENTE, 'jorge.acevedo@tecnored.cl', self._rut_with_dv(16874521)),
                 ],
             },
         ]
-        usernames = ['superadmin', 'admin_cliente', 'gerente', 'vendedor'] + [
+        usernames = ['superadmin', 'ana.rios', 'matias.urrutia', 'carlos.fuentes'] + [
             username for spec in additional_specs for username, *_ in spec['users']
         ]
-        company_name = 'Empresa Demo - Plan Premium'
-        company_rut = '11111111-1'
+        company_name = 'Comercial Andes SpA'
+        company_rut = self._rut_with_dv(76123456)
         all_company_ruts = [company_rut] + [spec['company'][1] for spec in additional_specs]
 
         if reset:
@@ -178,9 +178,9 @@ class Command(BaseCommand):
     def _ensure_users(self, User, company: Company) -> dict:
         users = {}
         user_specs = [
-            ('admin_cliente', User.ROLE_ADMIN_CLIENTE, 'admin_cliente@example.com', '11111111-1'),
-            ('gerente', User.ROLE_GERENTE, 'gerente@example.com', '22222222-2'),
-            ('vendedor', User.ROLE_VENDEDOR, 'vendedor@example.com', '33333333-3'),
+            ('ana.rios', User.ROLE_ADMIN_CLIENTE, 'ana.rios@andes.cl', self._rut_with_dv(12543218)),
+            ('matias.urrutia', User.ROLE_GERENTE, 'matias.urrutia@andes.cl', self._rut_with_dv(13245768)),
+            ('carlos.fuentes', User.ROLE_VENDEDOR, 'carlos.fuentes@andes.cl', self._rut_with_dv(14598237)),
         ]
         for username, role, email, rut in user_specs:
             user, _ = User.objects.get_or_create(
@@ -230,22 +230,22 @@ class Command(BaseCommand):
 
     def _ensure_branches(self, company: Company, target: int) -> list[Branch]:
         names = [
-            'Casa Matriz',
-            'Sucursal Norte',
-            'Sucursal Sur',
-            'Sucursal Oriente',
-            'Sucursal Poniente',
-            'Sucursal Centro',
+            ('Casa Matriz', 'Av. Providencia 1200, Santiago'),
+            ('Sucursal Norte', 'Av. Recoleta 345, Concepción'),
+            ('Sucursal Sur', 'Camino a Melipilla 890, Talca'),
+            ('Sucursal Oriente', 'Av. La Dehesa 450, Lo Barnechea'),
+            ('Sucursal Poniente', 'Av. Pajaritos 950, Maipú'),
+            ('Sucursal Centro', 'Moneda 987, Santiago Centro'),
         ]
         branches = []
         for idx in range(target):
-            base_name = names[idx % len(names)]
+            base_name, address = names[idx % len(names)]
             name = base_name if idx < len(names) else f"{base_name} {idx + 1}"
             branch, _ = Branch.objects.update_or_create(
                 company=company,
                 name=name,
                 defaults={
-                    'address': f'Dirección {idx + 1}',
+                    'address': address,
                     'phone': f'+56 9 5555 0{idx:03d}',
                 },
             )
@@ -311,19 +311,32 @@ class Command(BaseCommand):
         existing_ruts = set(
             Supplier.objects.filter(company=company).values_list('rut', flat=True)
         )
+        supplier_pool = [
+            ('Ferretería Los Héroes', 'Paula Martínez', 'compras@losheroes.cl'),
+            ('Distribuidora Austral', 'Sebastián Rojas', 'ventas@daustral.cl'),
+            ('Importadora Ñuñoa', 'Claudia Pizarro', 'contacto@importnunoa.cl'),
+            ('AgroChile Proveedores', 'Ignacio Bravo', 'ibravo@agrochile.cl'),
+            ('ServiRed Eléctrica', 'Valentina Correa', 'vcorrea@servired.cl'),
+            ('Maderas San Joaquín', 'Felipe Araya', 'faraya@maderassj.cl'),
+            ('Plásticos del Pacífico', 'Daniela Silva', 'dsilva@plaspacifico.cl'),
+            ('Textiles Maipo', 'Lorena Carrasco', 'lcarrasco@tmaipo.cl'),
+            ('Lácteos del Sur', 'Tomás Quiroz', 'tquiroz@lacteosur.cl'),
+            ('CobreAndes Insumos', 'Camila Vergara', 'cvergara@cobreandes.cl'),
+        ]
         suppliers_to_create = []
         for i in range(target):
-            rut = self._rut_with_dv(80000000 + i)
+            rut = self._rut_with_dv(80020000 + i)
             if rut in existing_ruts:
                 continue
+            name, contact, email = supplier_pool[i % len(supplier_pool)]
             suppliers_to_create.append(
                 Supplier(
                     company=company,
-                    name=f'Proveedor {i + 1}',
+                    name=name,
                     rut=rut,
-                    contact_name=f'Contacto {i + 1}',
-                    contact_email=f'contacto{i + 1}@demo.cl',
-                    contact_phone=f'+56 9 {rng.randint(10000000, 99999999)}',
+                    contact_name=contact,
+                    contact_email=email,
+                    contact_phone=f'+56 9 {rng.randint(30000000, 99999999)}',
                 )
             )
         if suppliers_to_create:
