@@ -19,7 +19,7 @@ from apps.core.forms import PlanForm, SubscriptionAdminForm
 from apps.core.models import Company, Plan, PlanFeature, Subscription
 from apps.inventory.models import Branch, Inventory, InventoryMovement, Product, Supplier
 from apps.inventory.web_views import _guard_role
-from apps.sales.models import CartItem, Order, OrderItem, Sale
+from apps.sales.models import CartItem, Order, OrderItem, Sale, SaleItem
 
 
 def login_view(request):
@@ -220,6 +220,13 @@ def checkout_view(request):
                         customer_email=request.user.email or '',
                         total=0,
                     )
+                    sale = Sale.objects.create(
+                        company=company,
+                        branch=selected_branch,
+                        seller=request.user,
+                        payment_method='tienda',
+                        total=0,
+                    )
                     running_total = Decimal('0')
                     for ci in items.select_for_update():
                         inventory = Inventory.objects.select_for_update().get(company=company, branch=selected_branch, product=ci.product)
@@ -230,6 +237,7 @@ def checkout_view(request):
                         price = ci.product.price
                         running_total += price * ci.quantity
                         OrderItem.objects.create(order=order, product=ci.product, quantity=ci.quantity, unit_price=price)
+                        SaleItem.objects.create(sale=sale, product=ci.product, quantity=ci.quantity, unit_price=price)
                         InventoryMovement.objects.create(
                             company=company,
                             branch=selected_branch,
@@ -241,6 +249,8 @@ def checkout_view(request):
                         )
                     order.total = running_total
                     order.save()
+                    sale.total = running_total
+                    sale.save()
                     items.delete()
                 messages.success(request, f'Orden #{order.id} creada')
                 return redirect('shop_orders')

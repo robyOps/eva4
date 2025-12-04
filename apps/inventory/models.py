@@ -48,10 +48,12 @@ class InventoryMovement(models.Model):
     MOV_PURCHASE = 'PURCHASE'
     MOV_SALE = 'SALE'
     MOV_ADJUST = 'ADJUST'
+    MOV_TRANSFER = 'TRANSFER'
     MOV_CHOICES = [
         (MOV_PURCHASE, 'Compra'),
         (MOV_SALE, 'Venta'),
         (MOV_ADJUST, 'Ajuste'),
+        (MOV_TRANSFER, 'Traspaso'),
     ]
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     branch = models.ForeignKey(Branch, on_delete=models.CASCADE)

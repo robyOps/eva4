@@ -129,6 +129,97 @@ def inventory_by_branch(request):
     return render(request, 'inventory/branch_inventory.html', context)
 
 
+@login_required
+def transfer_stock(request):
+    denial = _guard_role(request, {User.ROLE_ADMIN_CLIENTE, User.ROLE_GERENTE, User.ROLE_SUPER_ADMIN}, required_feature='inventory')
+    if denial:
+        return denial
+
+    company = request.user.company
+    if not company:
+        messages.error(request, 'Debes pertenecer a una compañía para mover inventario entre sucursales.')
+        return redirect('dashboard')
+    branches = Branch.objects.filter(company=company).order_by('name')
+    products = Product.objects.filter(company=company).order_by('name')
+    form_errors: list[str] = []
+
+    if request.method == 'POST':
+        source_id = request.POST.get('source_branch')
+        target_id = request.POST.get('target_branch')
+        product_id = request.POST.get('product')
+        qty_raw = request.POST.get('quantity', '0')
+        note = request.POST.get('note', '').strip()
+
+        source_branch = branches.filter(id=source_id).first()
+        target_branch = branches.filter(id=target_id).first()
+        product = products.filter(id=product_id).first()
+
+        if not source_branch or not target_branch:
+            form_errors.append('Selecciona sucursales válidas.')
+        if source_branch and target_branch and source_branch == target_branch:
+            form_errors.append('La sucursal de origen y destino no pueden ser la misma.')
+        if not product:
+            form_errors.append('Selecciona un producto a transferir.')
+        try:
+            quantity = int(qty_raw)
+            if quantity < 1:
+                raise ValueError
+        except ValueError:
+            form_errors.append('Ingresa una cantidad válida (mínimo 1).')
+            quantity = 0
+
+        if not form_errors and source_branch and target_branch and product:
+            try:
+                with transaction.atomic():
+                    source_inventory, _ = Inventory.objects.select_for_update().get_or_create(
+                        company=company,
+                        branch=source_branch,
+                        product=product,
+                        defaults={'stock': 0},
+                    )
+                    target_inventory, _ = Inventory.objects.select_for_update().get_or_create(
+                        company=company,
+                        branch=target_branch,
+                        product=product,
+                        defaults={'stock': 0},
+                    )
+                    if source_inventory.stock < quantity:
+                        raise ValidationError('Stock insuficiente en la sucursal de origen.')
+                    source_inventory.stock -= quantity
+                    target_inventory.stock += quantity
+                    source_inventory.save()
+                    target_inventory.save()
+                    InventoryMovement.objects.create(
+                        company=company,
+                        branch=source_branch,
+                        product=product,
+                        movement_type=InventoryMovement.MOV_TRANSFER,
+                        quantity_delta=-quantity,
+                        reason=note or f'Traspaso a {target_branch.name}',
+                        created_by=request.user,
+                    )
+                    InventoryMovement.objects.create(
+                        company=company,
+                        branch=target_branch,
+                        product=product,
+                        movement_type=InventoryMovement.MOV_TRANSFER,
+                        quantity_delta=quantity,
+                        reason=note or f'Traspaso desde {source_branch.name}',
+                        created_by=request.user,
+                    )
+                messages.success(request, f'Se transfirieron {quantity} unidades de {product.name}.')
+                return redirect('inventory_transfer')
+            except ValidationError as exc:
+                form_errors.append(str(getattr(exc, 'detail', exc)))
+
+    context = {
+        'branches': branches,
+        'products': products,
+        'form_errors': form_errors,
+    }
+    return render(request, 'inventory/transfer.html', context)
+
+
 def _create_purchase(validated_data, user):
     items_data = validated_data.pop('items')
     branch = validated_data['branch']

@@ -6,68 +6,87 @@
     <title>ERP</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
       :root {
-        --bg-body: #f4f6fb;
-        --text-main: #1f2933;
-        --muted: #6c7684;
-        --card-border: #e4e7ee;
-        --primary: #3451e0;
+        --bg-body: #0c1116;
+        --bg-panel: #101827;
+        --surface: #111927;
+        --surface-2: #0b1623;
+        --text-main: #f5f7fb;
+        --muted: #9fb3c8;
+        --accent: #7cf6c4;
+        --accent-strong: #3dd598;
+        --danger: #ff6b6b;
       }
 
       body {
-        font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        background: var(--bg-body);
+        font-family: 'Manrope', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: radial-gradient(circle at 20% 20%, rgba(124, 246, 196, 0.08), transparent 30%),
+          radial-gradient(circle at 80% 0%, rgba(102, 126, 234, 0.12), transparent 35%),
+          var(--bg-body);
         color: var(--text-main);
+        min-height: 100vh;
       }
 
       .navbar {
-        background: linear-gradient(90deg, #101828, #16213d);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-        box-shadow: 0 12px 30px -15px rgba(0, 0, 0, 0.45);
-        padding-block: 0.65rem;
+        background: linear-gradient(120deg, #111927, #0b1623 55%, #0c1116);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        padding-block: 0.9rem;
+        position: sticky;
+        top: 0;
+        z-index: 10;
       }
 
       .navbar-brand {
-        font-weight: 700;
-        letter-spacing: -0.01em;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        color: var(--accent) !important;
+        text-transform: uppercase;
       }
 
       .navbar-nav .nav-link {
-        padding: 0.65rem 0.95rem;
-        border-radius: 0.65rem;
-        color: rgba(255, 255, 255, 0.86);
-        transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+        padding: 0.55rem 0.95rem;
+        border-radius: 0.75rem;
+        color: rgba(245, 247, 251, 0.85);
+        transition: background 0.2s ease, transform 0.2s ease, color 0.2s ease;
       }
 
       .navbar-nav .nav-link:hover,
       .navbar-nav .nav-link:focus {
-        color: #fff;
-        background: rgba(255, 255, 255, 0.08);
+        color: var(--accent);
+        background: rgba(124, 246, 196, 0.08);
+        transform: translateY(-1px);
         text-decoration: none;
       }
 
-      .navbar-nav .nav-link:focus,
-      .navbar-nav .nav-link:active {
-        box-shadow: none;
+      .navbar-nav .dropdown-menu {
+        border-radius: 1rem;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        background: #0f1724;
+        box-shadow: 0 25px 65px -35px rgba(0, 0, 0, 0.75);
       }
 
-      .navbar-nav .dropdown-menu {
-        border-radius: 0.75rem;
-        border-color: #e4e7ee;
-        box-shadow: 0 18px 45px -22px rgba(0, 0, 0, 0.4);
+      .navbar-nav .dropdown-item {
+        color: var(--text-main);
+      }
+
+      .navbar-nav .dropdown-item:hover {
+        background: rgba(124, 246, 196, 0.08);
+        color: var(--accent);
       }
 
       .page-shell {
-        padding-top: 1rem;
-        padding-bottom: 2rem;
+        padding: 1.5rem 0 3rem;
       }
 
       .page-header {
-        border-bottom: 1px solid #e7e9f0;
-        padding-bottom: 0.75rem;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        background: linear-gradient(145deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
+        border-radius: 1rem;
+        padding: 1.25rem 1.5rem;
+        box-shadow: 0 20px 45px -40px rgba(0, 0, 0, 0.8);
         gap: 1rem;
       }
 
@@ -75,8 +94,8 @@
       .page-header h2,
       .page-header h3,
       .page-header h5 {
-        font-weight: 700;
-        letter-spacing: -0.02em;
+        font-weight: 800;
+        letter-spacing: -0.03em;
       }
 
       .page-header small,
@@ -85,22 +104,24 @@
       }
 
       .card {
-        border: 1px solid var(--card-border);
-        border-radius: 1rem;
-        box-shadow: 0 18px 40px -28px rgba(16, 24, 40, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 1.25rem;
+        background: linear-gradient(165deg, var(--surface), var(--surface-2));
+        box-shadow: 0 24px 60px -40px rgba(0, 0, 0, 0.9);
       }
 
       .card-header,
       .card-footer {
-        background: #f9fafb;
-        border-color: var(--card-border);
+        background: rgba(255, 255, 255, 0.02);
+        border-color: rgba(255, 255, 255, 0.05);
+        color: var(--muted);
       }
 
       .table thead th {
         text-transform: uppercase;
-        letter-spacing: 0.02em;
-        font-size: 0.85rem;
-        color: #4b5563;
+        letter-spacing: 0.03em;
+        font-size: 0.82rem;
+        color: var(--muted);
         border-bottom-width: 1px;
       }
 
@@ -110,26 +131,65 @@
       }
 
       .btn-primary {
-        background: var(--primary);
-        border-color: var(--primary);
-        box-shadow: 0 10px 30px -14px rgba(52, 81, 224, 0.6);
+        background: linear-gradient(120deg, #38bdf8, #7cf6c4);
+        border: none;
+        color: #0c1116;
+        font-weight: 700;
+        box-shadow: 0 18px 40px -18px rgba(124, 246, 196, 0.65);
       }
 
       .btn-primary:hover {
-        background: #273ec8;
-        border-color: #273ec8;
+        background: linear-gradient(120deg, #67e8f9, #3dd598);
+        color: #0c1116;
+      }
+
+      .btn-outline-secondary {
+        border-color: rgba(255, 255, 255, 0.25);
+        color: var(--text-main);
+      }
+
+      .btn-outline-secondary:hover {
+        background: rgba(255, 255, 255, 0.08);
+        color: var(--accent);
+      }
+
+      .form-control,
+      .form-select {
+        background: rgba(255, 255, 255, 0.02);
+        border-color: rgba(255, 255, 255, 0.08);
+        color: var(--text-main);
       }
 
       .form-control:focus,
       .form-select:focus {
-        box-shadow: 0 0 0 0.15rem rgba(52, 81, 224, 0.15);
-        border-color: rgba(52, 81, 224, 0.6);
+        box-shadow: 0 0 0 0.15rem rgba(124, 246, 196, 0.25);
+        border-color: rgba(124, 246, 196, 0.7);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text-main);
       }
 
       .badge {
         padding: 0.45rem 0.7rem;
         border-radius: 0.75rem;
-        font-weight: 600;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+      }
+
+      .badge.bg-secondary {
+        background: rgba(124, 246, 196, 0.2) !important;
+        color: var(--accent) !important;
+      }
+
+      .alert-info,
+      .alert-warning,
+      .alert-danger,
+      .alert-success {
+        border-radius: 0.9rem;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .table-hover tbody tr:hover {
+        background: rgba(124, 246, 196, 0.03);
       }
     </style>
 </head>
@@ -160,8 +220,10 @@
                 {% endif %}
                   {% if role == 'admin_cliente' %}
                       <li class="nav-item"><a class="nav-link" href="{% url 'shop-products' %}">Productos</a></li>
+                      <li class="nav-item"><a class="nav-link" href="{% url 'shop-cart' %}">Carrito</a></li>
                       <li class="nav-item"><a class="nav-link" href="{% url 'suppliers_list' %}">Proveedores</a></li>
                       <li class="nav-item"><a class="nav-link" href="{% url 'inventory_by_branch' %}">Inventario</a></li>
+                      <li class="nav-item"><a class="nav-link" href="{% url 'inventory_transfer' %}">Traspasos</a></li>
                       <li class="nav-item"><a class="nav-link" href="{% url 'purchase_create' %}">Compras</a></li>
                       <li class="nav-item"><a class="nav-link" href="{% url 'sales_list' %}">Ventas</a></li>
                       <li class="nav-item"><a class="nav-link" href="{% url 'shop_orders' %}">Órdenes</a></li>
@@ -171,12 +233,15 @@
                       {% endif %}
                       <li class="nav-item"><a class="nav-link" href="{% url 'branches_list' %}">Sucursales</a></li>
                       <li class="nav-item"><a class="nav-link" href="{% url 'subscription_detail' %}">Suscripción</a></li>
+                      <li class="nav-item"><a class="nav-link" href="{% url 'shop-checkout' %}">Checkout</a></li>
                       <li class="nav-item"><a class="nav-link" href="{% url 'user_create' %}">Gestión de usuarios</a></li>
                 {% elif role == 'gerente' %}
                     {% if can_inventory %}
                         <li class="nav-item"><a class="nav-link" href="{% url 'shop-products' %}">Productos</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'shop-cart' %}">Carrito</a></li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'suppliers_list' %}">Proveedores</a></li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'inventory_by_branch' %}">Inventario</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'inventory_transfer' %}">Traspasos</a></li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'purchase_create' %}">Compras</a></li>
                     {% endif %}
                     {% if can_sales %}

@@ -34,5 +34,6 @@ urlpatterns = [
     path('suppliers/', inventory_views.suppliers_list, name='suppliers_list'),
     path('suppliers/create/', inventory_views.supplier_create, name='suppliers_create'),
     path('inventory/', inventory_views.inventory_by_branch, name='inventory_by_branch'),
+    path('inventory/transfer/', inventory_views.transfer_stock, name='inventory_transfer'),
     path('logout/', views.logout_view, name='logout'),
 ]

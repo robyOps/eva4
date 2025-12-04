@@ -5,6 +5,9 @@
     <h3 class="mb-0">Inventario por sucursal</h3>
     <p class="text-muted mb-0">Revisa el stock disponible por sucursal y punto de reposición.</p>
   </div>
+  <div class="d-flex gap-2">
+    <a class="btn btn-outline-secondary btn-sm" href="{% url 'inventory_transfer' %}">Traspasar stock</a>
+  </div>
 </div>
 
 {% if branches %}
